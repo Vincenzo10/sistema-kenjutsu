@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#050a14">
+<meta name="color-scheme" content="dark">
+<title>Laboratorio · Fulmini (Canvas 2D vs WebGL)</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Pagina di confronto: NON fa parte dell'app e non legge né scrive i tuoi dati. */
+:root{--bg:#050a14;--neon:#00d2ff;--txt:#cfefff;--muted:#6f93ad;--gold:#ffd166;--c:255,30,60}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg);color-scheme:dark}
+html,body{height:100%;overscroll-behavior:none}
+body{background:var(--bg);color:var(--txt);font-family:'Rajdhani',system-ui,sans-serif;display:flex;flex-direction:column;
+ padding:calc(10px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));gap:10px;max-width:520px;margin:0 auto}
+h1{font-family:'Orbitron';font-size:13px;letter-spacing:3px;color:var(--neon);text-align:center;text-shadow:0 0 8px var(--neon)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+button{font-family:'Orbitron';font-size:10.5px;letter-spacing:1.5px;padding:10px 4px;border-radius:4px;border:1px solid #1f4a70;background:transparent;color:#8fc4e6;cursor:pointer}
+button.on{border-color:var(--neon);color:#fff;background:rgba(0,210,255,.16);box-shadow:0 0 10px rgba(0,210,255,.3)}
+.go{border-color:rgb(var(--c));color:rgb(var(--c));background:rgba(var(--c),.12);text-shadow:0 0 8px rgb(var(--c));font-size:12px;letter-spacing:3px;padding:13px}
+.stage{position:relative;flex:1;min-height:420px;border:1px solid #14395e;border-radius:10px;overflow:hidden;background:radial-gradient(ellipse at top,#0a1a33 0%,var(--bg) 65%)}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%}
+#pixi{position:absolute;inset:0}
+.card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:78%;text-align:center;border:1px solid rgb(var(--c));
+ background:rgba(18,2,6,.72);border-radius:6px;padding:18px 12px;box-shadow:0 0 24px rgba(var(--c),.45),inset 0 0 24px rgba(var(--c),.2);z-index:2;pointer-events:none}
+.card .k{font-size:50px;color:#fff;text-shadow:0 0 18px rgb(var(--c)),0 0 40px rgb(var(--c))}
+.card .n{font-family:'Orbitron';font-weight:900;letter-spacing:3px;font-size:20px;color:#fff;text-shadow:0 0 10px rgb(var(--c))}
+.card .t{font-size:13px;color:rgb(var(--c));letter-spacing:1px}
+.hud{position:absolute;left:8px;top:8px;z-index:3;font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#7fd8ff;background:rgba(5,10,20,.75);border:1px solid #14395e;border-radius:4px;padding:4px 7px;line-height:1.5}
+.note{font-size:13px;color:var(--muted);text-align:center;line-height:1.35}
+</style>
+</head>
+<body>
+<h1>LABORATORIO · FULMINI</h1>
+<div class="seg">
+ <button id="b-old" onclick="setEngine('old')">ATTUALE · CANVAS 2D</button>
+ <button id="b-new" class="on" onclick="setEngine('new')">NUOVO · WEBGL</button>
+</div>
+<div class="chips">
+ <button data-s="3" onclick="setStage(3)">稲妻 INAZUMA</button>
+ <button data-s="6" onclick="setStage(6)">紫電 SHIDEN</button>
+ <button data-s="9" class="on" onclick="setStage(9)">雷神 RAIJIN</button>
+</div>
+<div class="stage" id="stage">
+ <canvas id="old"></canvas>
+ <div id="pixi"></div>
+ <div class="card"><div class="k" id="ck">雷神</div><div class="n" id="cn">RAIJIN</div><div class="t" id="ct">Dio del Fulmine</div></div>
+ <div class="hud" id="hud">-</div>
+</div>
+<button class="go" onclick="burst()">⚡ SCATENA IL RISVEGLIO</button>
+<p class="note">Senza toccare il pulsante vedi l'effetto di sottofondo (ambiente). Il pulsante simula i 4 secondi della notifica di Risveglio. Confronta fluidità (FPS) e resa.</p>
+
+<script src="pixi.min.js"></script>
+<script>
+/* ======================================================================
+   Parametri comuni: tre stadi della Via del Fulmine
+   ====================================================================== */
+const STAGES={
+ 3:{k:'稲妻',n:'INAZUMA',t:'Il Lampo',col:'77,163,255',hex:0x4da3ff,dark:0},
+ 6:{k:'紫電',n:'SHIDEN',t:'Lama Fulminea',col:'177,77,255',hex:0xb14dff,dark:.1},
+ 9:{k:'雷神',n:'RAIJIN',t:'Dio del Fulmine',col:'255,30,60',hex:0xff1e3c,dark:.55}
+};
+let STAGE=9,ENGINE='new',BURST_END=0;
+const $=id=>document.getElementById(id);
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const now=()=>performance.now();
+const intensity=()=>now()<BURST_END?1:.38;
+
+function setStage(s){
+ STAGE=s;const st=STAGES[s];document.documentElement.style.setProperty('--c',st.col);
+ $('ck').textContent=st.k;$('cn').textContent=st.n;$('ct').textContent=st.t;
+ document.querySelectorAll('[data-s]').forEach(b=>b.classList.toggle('on',+b.dataset.s===s));
+ OLD.reset();NEW.reset&&NEW.reset();
+}
+function setEngine(e){
+ ENGINE=e;$('b-old').classList.toggle('on',e==='old');$('b-new').classList.toggle('on',e==='new');
+ $('old').style.display=e==='old'?'block':'none';$('pixi').style.display=e==='new'?'block':'none';
+}
+function burst(){BURST_END=now()+4200;if(ENGINE==='new')NEW.onBurst();else OLD.onBurst()}
+
+/* Percorso frastagliato di un fulmine (spostamento del punto medio) */
+function boltPath(x1,y1,x2,y2,it=6){let P=[[x1,y1],[x2,y2]];
+ for(let i=0;i<it;i++){const N=[];for(let j=0;j<P.length-1;j++){const a=P[j],b=P[j+1],l=Math.hypot(b[0]-a[0],b[1]-a[1]);
+  N.push(a,[(a[0]+b[0])/2+rnd(-.5,.5)*l*.45,(a[1]+b[1])/2+rnd(-.5,.5)*l*.12])}N.push(P[P.length-1]);P=N}return P}
+
+/* ======================================================================
+   MOTORE ATTUALE (Canvas 2D) — stessa logica dell'app di oggi
+   ====================================================================== */
+const OLD={c:$('old'),x:null,w:0,h:0,p:[],bolts:[],flash:0,next:0,slashes:[],
+ reset(){this.p=[];this.bolts=[];this.slashes=[]},
+ size(){const r=this.c.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);this.c.width=r.width*d;this.c.height=r.height*d;this.x=this.c.getContext('2d');this.x.setTransform(d,0,0,d,0,0);this.w=r.width;this.h=r.height},
+ onBurst(){this.next=0},
+ frame(t){
+  const x=this.x,I=intensity(),st=STAGES[STAGE],i=STAGE;
+  x.globalCompositeOperation='source-over';x.clearRect(0,0,this.w,this.h);
+  if(Math.random()<I*(.35+i*.06))this.p.push({x:rnd(0,this.w),y:this.h+10,vx:rnd(-.3,.3),vy:rnd(-.9,-.3),r:rnd(1,2.6),life:1,dec:rnd(.003,.007),col:Math.random()<st.dark?'30,0,0':st.col});
+  if(t>this.next){
+   const sx=rnd(.1,.9)*this.w,main=boltPath(sx,-10,sx+rnd(-90,90),rnd(.45,1)*this.h);
+   const br=main[Math.floor(rnd(.25,.6)*main.length)],branch=boltPath(br[0],br[1],br[0]+rnd(-120,120),br[1]+rnd(60,180));
+   this.bolts.push({paths:[main,branch],life:1,dark:Math.random()<st.dark,w:(.45+i*.07)*(I>.5?1:.75)});
+   this.flash=Math.max(this.flash,(.12+i*.025)*I);
+   this.next=t+(I>.5?rnd(700,1100)/(1+i*.35):rnd(9000,14000)/(1+i*.25));
+  }
+  if(i>=8&&I>.5&&Math.random()<.02)this.slashes.push({a:rnd(-.7,-.3),life:1});
+  if(I>.5&&i>=7){const g=x.createRadialGradient(this.w/2,this.h/2,this.h*.2,this.w/2,this.h/2,this.h*.75);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.6)');x.fillStyle=g;x.fillRect(0,0,this.w,this.h)}
+  for(const p of this.p){p.x+=p.vx;p.y+=p.vy;p.life-=p.dec;x.globalCompositeOperation='lighter';
+   x.fillStyle=`rgba(${p.col},${p.life*.25})`;x.beginPath();x.arc(p.x,p.y,p.r*3,0,7);x.fill();
+   x.fillStyle=`rgba(${p.col},${p.life*.9})`;x.beginPath();x.arc(p.x,p.y,p.r,0,7);x.fill()}
+  this.p=this.p.filter(p=>p.life>0&&p.y>-20);
+  x.globalCompositeOperation='source-over';
+  for(const b of this.bolts){b.paths.forEach((P,k)=>{x.beginPath();P.forEach((p,j)=>j?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));
+   const a=b.life*(k?.6:1);x.shadowBlur=24;x.shadowColor=`rgba(${st.col},${a})`;x.strokeStyle=`rgba(${st.col},${a*.8})`;x.lineWidth=(k?3:7)*b.w;x.stroke();
+   x.shadowBlur=0;x.strokeStyle=b.dark?`rgba(0,0,0,${a})`:`rgba(255,255,255,${a})`;x.lineWidth=(k?1.2:2.6)*b.w;x.stroke()});b.life-=.06}
+  this.bolts=this.bolts.filter(b=>b.life>0);
+  for(const s of this.slashes){s.life-=.035;const a=Math.max(0,s.life);x.globalCompositeOperation='lighter';x.save();x.translate(this.w/2,this.h/2);x.rotate(s.a);
+   x.strokeStyle=`rgba(255,255,255,${a})`;x.shadowBlur=22;x.shadowColor=`rgb(${st.col})`;x.lineWidth=4*a+.5;x.beginPath();x.moveTo(-this.w*.7,0);x.lineTo(this.w*.7,-14);x.stroke();x.restore()}
+  this.slashes=this.slashes.filter(s=>s.life>0);
+  if(this.flash>0){x.globalCompositeOperation='source-over';x.fillStyle=`rgba(${st.col},${this.flash})`;x.fillRect(0,0,this.w,this.h);this.flash*=.82;if(this.flash<.01)this.flash=0}
+ }
+};
+
+/* ======================================================================
+   MOTORE NUOVO (WebGL con PixiJS)
+   - Bagliore vero (bloom): i fulmini sono disegnati 3 volte, due copie
+     sfocate dalla GPU e sommate in modalità additiva.
+   - Il fulmine "cresce" dall'alto verso il basso in ~90 ms, poi sfarfalla.
+   - All'impatto: esplosione di scintille e alone sul terreno.
+   - Archi elettrici che corrono lungo i bordi della carta.
+   - Fino a ~1500 particelle senza rallentare.
+   ====================================================================== */
+const NEW={app:null,ready:false};
+(async()=>{
+ if(!window.PIXI){$('hud').textContent='PixiJS non caricato';return}
+ const app=new PIXI.Application();
+ await app.init({resizeTo:$('pixi'),backgroundAlpha:0,antialias:true,resolution:Math.min(2,devicePixelRatio||1),autoDensity:true,powerPreference:'high-performance'});
+ $('pixi').appendChild(app.canvas);NEW.app=app;
+ const W=()=>app.screen.width,H=()=>app.screen.height;
+
+ /* Texture morbida per particelle e aloni, generata una volta sola */
+ const tc=document.createElement('canvas');tc.width=tc.height=64;const tx=tc.getContext('2d');
+ const g0=tx.createRadialGradient(32,32,0,32,32,32);g0.addColorStop(0,'rgba(255,255,255,1)');g0.addColorStop(.25,'rgba(255,255,255,.6)');g0.addColorStop(1,'rgba(255,255,255,0)');
+ tx.fillStyle=g0;tx.fillRect(0,0,64,64);const DOT=PIXI.Texture.from(tc);
+
+ /* Vignetta scura per gli stadi alti */
+ const vc=document.createElement('canvas');vc.width=vc.height=256;const vx=vc.getContext('2d');
+ const gv=vx.createRadialGradient(128,128,40,128,128,180);gv.addColorStop(0,'rgba(0,0,0,0)');gv.addColorStop(1,'rgba(0,0,0,.85)');vx.fillStyle=gv;vx.fillRect(0,0,256,256);
+ const vign=new PIXI.Sprite(PIXI.Texture.from(vc));vign.alpha=0;
+
+ const world=new PIXI.Container();app.stage.addChild(world);
+ const ground=new PIXI.Container();ground.blendMode='add';
+ const motes=new PIXI.Container();motes.blendMode='add';
+ const glowFar=new PIXI.Graphics();glowFar.blendMode='add';glowFar.filters=[new PIXI.BlurFilter({strength:26,quality:3})];
+ const glowNear=new PIXI.Graphics();glowNear.blendMode='add';glowNear.filters=[new PIXI.BlurFilter({strength:8,quality:3})];
+ const core=new PIXI.Graphics();
+ const sparks=new PIXI.Container();sparks.blendMode='add';
+ const arcs=new PIXI.Graphics();arcs.blendMode='add';
+ const arcsGlow=new PIXI.Graphics();arcsGlow.blendMode='add';arcsGlow.filters=[new PIXI.BlurFilter({strength:6,quality:2})];
+ const flash=new PIXI.Graphics();
+ world.addChild(vign,ground,motes,glowFar,glowNear,core,sparks,arcsGlow,arcs,flash);
+
+ let bolts=[],next=0,flashA=0,shake=0;
+ const pool=[];const getDot=(parent)=>{const s=pool.pop()||new PIXI.Sprite(DOT);s.anchor.set(.5);parent.addChild(s);return s};
+ const free=s=>{s.parent&&s.parent.removeChild(s);pool.push(s)};
+ const P=[]; /* particelle: {s,vx,vy,life,dec,grav,size} */
+
+ function addParticle(parent,x,y,vx,vy,size,tint,life,dec,grav=0){
+  if(P.length>1500)return;const s=getDot(parent);s.x=x;s.y=y;s.tint=tint;s.alpha=1;s.scale.set(size/32);
+  P.push({s,vx,vy,life,dec,grav,size});
+ }
+ function strike(I){
+  const st=STAGES[STAGE],i=STAGE,w=W(),h=H();
+  const sx=rnd(.12,.88)*w,ex=sx+rnd(-80,80),ey=rnd(.55,.98)*h;
+  const main=boltPath(sx,-20,ex,ey,7);
+  const branches=[];const nb=I>.5?3:1;
+  for(let b=0;b<nb;b++){const p=main[Math.floor(rnd(.2,.7)*main.length)];branches.push(boltPath(p[0],p[1],p[0]+rnd(-140,140),p[1]+rnd(60,200),5))}
+  bolts.push({main,branches,t0:now(),dark:Math.random()<st.dark,w:(.55+i*.08)*(I>.5?1.15:.8),hex:st.hex,hit:false,ex,ey});
+  shake=Math.max(shake,I>.5&&i>=5?9:0);
+ }
+ function impact(b,I){
+  const n=I>.5?70:18;
+  for(let k=0;k<n;k++){const a=rnd(Math.PI*1.05,Math.PI*1.95),v=rnd(2,9);
+   addParticle(sparks,b.ex,b.ey,Math.cos(a)*v,Math.sin(a)*v,rnd(3,9),Math.random()<.5?0xffffff:b.hex,1,rnd(.015,.035),.22)}
+  const r=getDot(ground);r.x=b.ex;r.y=b.ey;r.tint=b.hex;r.alpha=.9;r.scale.set(5,1.6);P.push({s:r,vx:0,vy:0,life:.9,dec:.025,grav:0,size:0,ring:1});
+  flashA=Math.max(flashA,(.05+STAGE*.018)*I);
+ }
+ function drawPath(g,pts,upto,width,color,alpha){
+  const n=Math.max(2,Math.floor(pts.length*upto));g.moveTo(pts[0][0],pts[0][1]);
+  for(let j=1;j<n;j++)g.lineTo(pts[j][0],pts[j][1]);g.stroke({width,color,alpha,cap:'round',join:'round'});
+ }
+ /* Archi elettrici attorno alla carta centrale */
+ function edgeArc(){
+  const w=W(),h=H(),cw=w*.78,ch=Math.min(230,h*.5),x0=(w-cw)/2,y0=h/2-ch/2;
+  const side=Math.floor(rnd(0,4));let a,b;
+  if(side===0){const x=rnd(x0,x0+cw-60);a=[x,y0];b=[x+rnd(30,70),y0]}
+  else if(side===1){const x=rnd(x0,x0+cw-60);a=[x,y0+ch];b=[x+rnd(30,70),y0+ch]}
+  else if(side===2){const y=rnd(y0,y0+ch-50);a=[x0,y];b=[x0,y+rnd(25,55)]}
+  else{const y=rnd(y0,y0+ch-50);a=[x0+cw,y];b=[x0+cw,y+rnd(25,55)]}
+  return{pts:boltPath(a[0],a[1],b[0],b[1],4),life:1};
+ }
+ let arcList=[];
+
+ NEW.reset=()=>{bolts=[];P.splice(0).forEach(p=>free(p.s));arcList=[]};
+ NEW.onBurst=()=>{next=0;flashA=.22;shake=12};
+
+ app.ticker.add(()=>{
+  if(ENGINE!=='new')return;
+  const t=now(),I=intensity(),st=STAGES[STAGE],i=STAGE,w=W(),h=H();
+  vign.width=w;vign.height=h;vign.alpha+=((I>.5&&i>=7?1:i>=8?.35:0)-vign.alpha)*.08;
+  /* particelle d'ambiente: braci che salgono, alcune scure per gli stadi alti */
+  if(Math.random()<I*(.6+i*.12))addParticle(motes,rnd(0,w),h+10,rnd(-.3,.3),rnd(-1.4,-.4),rnd(2,5),Math.random()<st.dark*.5?0x330008:st.hex,1,rnd(.003,.008));
+  if(t>next){strike(I);next=t+(I>.5?rnd(420,750)/(1+i*.3):rnd(5000,9000)/(1+i*.25))}
+  if(I>.5&&Math.random()<.25)arcList.push(edgeArc());
+  if(I<=.5&&i>=6&&Math.random()<.015)arcList.push(edgeArc());
+
+  /* fulmini: crescita, sfarfallio, impatto */
+  glowFar.clear();glowNear.clear();core.clear();
+  bolts=bolts.filter(b=>{
+   const age=t-b.t0,grow=Math.min(1,age/90),fade=age<90?1:Math.max(0,1-(age-90)/420);
+   if(fade<=0)return false;
+   const flick=age>90?(Math.random()<.25?.35:1):1,a=fade*flick;
+   if(grow>=1&&!b.hit){b.hit=true;impact(b,I)}
+   const all=[[b.main,1],...b.branches.map(p=>[p,.55])];
+   for(const[pts,k]of all){
+    drawPath(glowFar,pts,grow,18*b.w*k,b.hex,.55*a);
+    drawPath(glowNear,pts,grow,7*b.w*k,b.hex,.9*a);
+    drawPath(core,pts,grow,(b.dark?3.4:2.2)*b.w*k,b.dark?0x000000:0xffffff,a);
+   }
+   return true;
+  });
+  /* archi elettrici */
+  arcs.clear();arcsGlow.clear();
+  arcList=arcList.filter(r=>{r.life-=.12;if(r.life<=0)return false;
+   if(Math.random()<.5)r.pts=boltPath(r.pts[0][0],r.pts[0][1],r.pts[r.pts.length-1][0],r.pts[r.pts.length-1][1],4);
+   drawPath(arcsGlow,r.pts,1,6,st.hex,r.life);drawPath(arcs,r.pts,1,1.4,0xffffff,r.life);return true});
+  /* aggiornamento particelle */
+  for(let k=P.length-1;k>=0;k--){const p=P[k];p.life-=p.dec;
+   if(p.life<=0){free(p.s);P.splice(k,1);continue}
+   p.vy+=p.grav;p.s.x+=p.vx;p.s.y+=p.vy;p.s.alpha=p.ring?p.life*.8:Math.min(1,p.life*1.4);
+   if(p.ring)p.s.scale.set(5+(1-p.life)*6,1.6+(1-p.life)*1.2);}
+  /* lampo a schermo e scossa */
+  flash.clear();if(flashA>.005){flash.rect(0,0,w,h).fill({color:st.hex,alpha:flashA});flashA*=.84}
+  if(shake>.3){world.x=rnd(-shake,shake);world.y=rnd(-shake,shake)*.6;shake*=.88}else{world.x=world.y=0}
+ });
+ NEW.ready=true;
+})();
+
+/* ======================================================================
+   Avvio, FPS e ridimensionamento
+   ====================================================================== */
+let frames=0,last=now(),fps=0;
+function loop(t){
+ requestAnimationFrame(loop);
+ if(ENGINE==='old'&&OLD.x)OLD.frame(t);
+ frames++;if(t-last>=500){fps=Math.round(frames*1000/(t-last));frames=0;last=t;
+  $('hud').innerHTML=`${ENGINE==='new'?'WebGL · PixiJS':'Canvas 2D'}<br>${fps} FPS · ${now()<BURST_END?'RISVEGLIO':'ambiente'}`}
+}
+OLD.size();addEventListener('resize',()=>OLD.size());
+setEngine('new');setStage(9);requestAnimationFrame(loop);
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
      se sei offline usa la copia salvata.
    - Font di Google: prima la copia salvata, poi la rete.
    I tuoi dati NON passano da qui: restano nel localStorage del telefono. */
-const VERSION = 'sistema-v1';
+const VERSION = 'sistema-v2';
 const APP = ['./', './index.html', './manifest.json',
   './icons/apple-touch-icon.png', './icons/icon-192.png', './icons/icon-512.png'];
 

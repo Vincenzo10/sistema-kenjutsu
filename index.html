@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#050a14">
+<meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-title" content="Il Sistema">
 <meta name="description" content="Il Sistema — tracker personale di kenjutsu in stile Solo Leveling">
 <link rel="manifest" href="manifest.json">
@@ -16,8 +17,9 @@
 <style>
 :root{--bg:#050a14;--neon:#00d2ff;--soft:rgba(0,210,255,.18);--panel:rgba(8,22,42,.72);--txt:#cfefff;--muted:#6f93ad;--gold:#ffd166;--red:#ff4d6d;--violet:#b388ff}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
-body{background:radial-gradient(ellipse at top,#0a1a33 0%,var(--bg) 60%);color:var(--txt);font-family:'Rajdhani',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+html{background:#050a14;color-scheme:dark}
+html,body{height:100%;overscroll-behavior:none}
+body{background-color:#050a14;background-image:radial-gradient(ellipse at top,#0a1a33 0%,var(--bg) 60%);color:var(--txt);font-family:'Rajdhani',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
 .hint{color:var(--muted);font-size:13px;letter-spacing:1px;margin-bottom:14px;text-align:center;max-width:390px}
 .phone{width:390px;height:800px;border-radius:40px;border:2px solid #12304d;background:var(--bg);overflow:hidden;position:relative;box-shadow:0 0 0 7px #08121f,0 20px 60px rgba(0,0,0,.6)}
 @media (max-width:500px){body{padding:0;justify-content:flex-start}.hint{display:none}.phone{width:100%;height:100vh;height:100dvh;border:none;border-radius:0;box-shadow:none}}

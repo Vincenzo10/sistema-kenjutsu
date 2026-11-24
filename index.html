@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#050a14">
+<meta name="apple-mobile-web-app-title" content="Il Sistema">
+<meta name="description" content="Il Sistema — tracker personale di kenjutsu in stile Solo Leveling">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<title>Il Sistema</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050a14;--neon:#00d2ff;--soft:rgba(0,210,255,.18);--panel:rgba(8,22,42,.72);--txt:#cfefff;--muted:#6f93ad;--gold:#ffd166;--red:#ff4d6d;--violet:#b388ff}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:radial-gradient(ellipse at top,#0a1a33 0%,var(--bg) 60%);color:var(--txt);font-family:'Rajdhani',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.hint{color:var(--muted);font-size:13px;letter-spacing:1px;margin-bottom:14px;text-align:center;max-width:390px}
+.phone{width:390px;height:800px;border-radius:40px;border:2px solid #12304d;background:var(--bg);overflow:hidden;position:relative;box-shadow:0 0 0 7px #08121f,0 20px 60px rgba(0,0,0,.6)}
+@media (max-width:500px){body{padding:0;justify-content:flex-start}.hint{display:none}.phone{width:100%;height:100vh;height:100dvh;border:none;border-radius:0;box-shadow:none}}
+.scr{position:absolute;inset:0;overflow-y:auto;padding:calc(16px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+.tab{display:none;animation:fade .35s ease}.tab.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.panel{background:var(--panel);border:1px solid var(--neon);border-radius:6px;padding:12px;margin-bottom:10px;box-shadow:0 0 10px var(--soft),inset 0 0 18px rgba(0,210,255,.07)}
+.ttl{font-family:'Orbitron';font-size:11px;letter-spacing:3px;color:var(--neon);text-shadow:0 0 8px var(--neon)}
+.ttl.c{text-align:center;margin-bottom:10px}.ttl b{display:inline-block;border:1px solid var(--neon);padding:3px 10px;border-radius:3px}
+.lbl{font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.val{font-family:'Orbitron';font-weight:700}
+.flex{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.bar{height:9px;border-radius:5px;background:#0b1d33;border:1px solid #14395e;overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#0077ff,var(--neon));box-shadow:0 0 10px var(--neon);transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.bar.gold i{background:linear-gradient(90deg,#ff9f1c,var(--gold));box-shadow:0 0 10px var(--gold)}
+.rank{width:50px;height:50px;border:2px solid var(--neon);border-radius:6px;display:grid;place-items:center;font-family:'Orbitron';font-weight:900;font-size:26px;color:var(--neon);text-shadow:0 0 10px var(--neon);box-shadow:0 0 12px var(--soft);flex:none}
+.phone{--c1:#00d2ff;--c2:#0a3d66;--cg:rgba(0,210,255,.35);--cbg:rgba(6,18,36,.92);--ct:#d8f6ff}
+#fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+#fx.burst{z-index:25}
+.scr{z-index:1}
+.shake{animation:shake .45s linear}
+@keyframes shake{10%,50%,90%{transform:translate(-4px,2px)}30%,70%{transform:translate(4px,-2px)}}
+.clspanel{border-color:var(--c1);box-shadow:0 0 12px var(--cg),inset 0 0 22px var(--cg);transition:border-color .6s,box-shadow .6s}
+.clspanel .ttl{color:var(--c1);text-shadow:0 0 8px var(--c1)}
+.track{display:flex;align-items:center;margin-top:10px}
+.track .lnk{flex:1;height:2px;background:#1b3550;min-width:2px}
+.stp{width:25px;height:25px;flex:none;border-radius:50%;border:1px solid #2a4560;display:grid;place-items:center;font-size:10.5px;color:#4d6a85;background:#06101e}
+.stp span{transform:scale(.9);white-space:nowrap;letter-spacing:-2px}
+.stp.past{border-color:var(--c1);color:var(--ct);background:var(--cg)}
+.stp.cur{border-color:var(--c1);color:#fff;background:var(--cg);box-shadow:0 0 10px var(--c1),0 0 2px var(--c1);transform:scale(1.18)}
+.cal-nav{margin:10px 0 6px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal .h{font-size:10.5px;color:var(--muted);font-family:'Orbitron';letter-spacing:1px;padding-bottom:2px}
+.cal .d{aspect-ratio:1;display:grid;place-items:center;font-size:13px;border-radius:4px;color:#5b7894;position:relative}
+.cal .d.sch{border:1px dashed rgba(0,210,255,.45);color:var(--txt)}
+.cal .d.att{background:var(--cg);border:1px solid var(--c1);color:#fff;box-shadow:0 0 8px var(--cg)}
+.cal .d.miss{border:1px solid rgba(255,77,109,.6);color:var(--red)}
+.cal .d.miss::after{content:"×";position:absolute;top:-3px;right:2px;font-size:11px}
+.cal .d.today{outline:2px solid var(--gold);outline-offset:1px}
+.cal-leg{display:flex;gap:12px;justify-content:center;font-size:11.5px;color:var(--muted);margin-top:8px}
+.cal-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.l-att{background:var(--cg);border:1px solid var(--c1)}.l-miss{border:1px solid var(--red)}.l-sch{border:1px dashed rgba(0,210,255,.6)}
+.wdays{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.wdays .chip{padding:7px 0;text-align:center}
+.entry{border-top:1px dashed rgba(0,210,255,.15);padding:9px 0}
+.entry .eh{display:flex;justify-content:space-between;align-items:center;font-size:13.5px}
+.entry .eh b{font-family:'Orbitron';font-size:11px;letter-spacing:1px;color:var(--c1);font-weight:500}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.tag{font-size:11.5px;padding:2px 7px;border-radius:3px;border:1px solid #1f4a70;color:#8fc4e6}
+.fixtxt{font-size:13.5px;margin-top:6px;padding-left:8px;border-left:2px solid var(--gold);color:#ffe7a8}
+.jt{font-size:11.5px;padding:2px 7px;border-radius:3px}
+.jt0{color:#6fd3a0;border:1px solid rgba(111,211,160,.4)}.jt1{color:var(--gold);border:1px solid rgba(255,209,102,.5)}.jt2{color:var(--red);border:1px solid rgba(255,77,109,.6)}
+.krow{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px dashed rgba(0,210,255,.15);cursor:pointer}
+.krow .kn{flex:1;font-size:15px;font-weight:600}.krow .kn small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+.pips{display:flex;gap:3px}.pips i{width:9px;height:9px;border-radius:2px;border:1px solid #2a5070}.pips i.on{background:var(--c1);border-color:var(--c1);box-shadow:0 0 6px var(--c1)}
+.klv{font-family:'Orbitron';font-size:9px;letter-spacing:1px;color:var(--ct);text-align:right;margin-top:3px}
+.due{font-family:'Orbitron';font-size:9px;letter-spacing:1px;color:var(--gold);border:1px solid rgba(255,209,102,.5);padding:2px 5px;border-radius:3px;margin-left:6px;vertical-align:2px}
+.fixwin{border-color:rgba(255,209,102,.6);box-shadow:0 0 10px rgba(255,209,102,.15)}
+.fixwin .ttl{color:var(--gold);text-shadow:0 0 8px var(--gold)}
+.fix{padding:9px 0;border-top:1px dashed rgba(255,209,102,.25)}
+.fix:first-of-type{border:none}
+.fix p{font-size:15px;line-height:1.25}.fix small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.fix .ga .btn{border-color:rgba(255,209,102,.6);color:var(--gold);text-shadow:0 0 6px var(--gold);background:rgba(255,209,102,.07);box-shadow:none}
+.fix .ga .btn.done{opacity:.45}
+.recov{border-color:rgba(111,211,160,.6);box-shadow:0 0 10px rgba(111,211,160,.15);font-size:13.5px;line-height:1.3}
+.recov b{font-family:'Orbitron';font-size:11px;letter-spacing:1.5px;color:#6fd3a0;display:block;margin-bottom:3px}
+.missed{border-color:rgba(255,77,109,.6);box-shadow:0 0 10px rgba(255,77,109,.15)}
+.form .lbl{margin:10px 0 5px;text-align:left}
+.form .chips{margin-top:0}
+.form textarea{width:100%;min-height:60px;background:#071426;border:1px solid #1b4a75;color:var(--txt);border-radius:4px;padding:8px 10px;font-family:'Rajdhani';font-size:16px;resize:vertical}
+.form .chip.on{border-color:var(--neon);background:rgba(0,210,255,.18);color:#fff;box-shadow:0 0 8px var(--soft)}
+.alert.form{max-height:calc(100% - 20px);overflow-y:auto;text-align:left}
+.fxopt{display:flex;gap:6px}.fxopt .chip{flex:1}
+.badge{display:inline-block;margin-top:4px;font-family:'Orbitron';font-size:10px;letter-spacing:1.5px;padding:3px 8px;border-radius:3px;border:1px solid var(--c1);color:var(--c1);text-shadow:0 0 6px var(--c1);box-shadow:0 0 10px var(--cg)}
+.badge.base{border-color:var(--muted);color:var(--muted);text-shadow:none;box-shadow:none}
+.info{width:19px;height:19px;border-radius:50%;border:1px solid var(--neon);background:transparent;color:var(--neon);font:600 11px Georgia,serif;font-style:italic;cursor:pointer;flex:none;margin-left:5px;vertical-align:1px;box-shadow:0 0 6px var(--soft)}
+.info:active{background:var(--neon);color:var(--bg)}
+.gl{text-align:left}.gl .mean{font-size:13px;color:var(--muted);margin:4px 0 10px;text-align:center}.gl .desc{font-size:14.5px;line-height:1.45}
+.gl .tip{font-size:13px;color:var(--gold);border-top:1px dashed rgba(255,209,102,.35);margin-top:10px;padding-top:8px}
+.minus{border-color:#3a6a90;color:#8fc4e6;box-shadow:none}
+.pend{color:var(--gold);font-size:12px;margin-left:3px;text-shadow:0 0 6px var(--gold)}
+.confirm{margin-top:8px}.confirm:not(.on){display:none!important}.confirm.on{display:grid;animation:fade .3s}
+.stat{display:grid;grid-template-columns:40px 1fr 66px 28px 28px;align-items:center;gap:6px;padding:6px 0;border-bottom:1px dashed rgba(0,210,255,.12)}
+.stat:last-child{border:none}
+.stat .k{font-family:'Orbitron';font-size:12px;color:var(--neon)}
+.stat .d{font-size:12.5px;color:var(--muted);line-height:1.1}
+.stat .n{font-family:'Orbitron';font-size:16px;text-align:right}
+.stat .n small{display:block;font-family:'Rajdhani';font-size:10.5px;color:var(--muted);letter-spacing:.5px}
+.plus{width:28px;height:28px;border:1px solid var(--neon);background:transparent;color:var(--neon);border-radius:4px;font-size:17px;box-shadow:0 0 8px var(--soft);cursor:pointer;transition:.2s}
+.plus:disabled{opacity:.25;box-shadow:none;cursor:default}
+.plus:not(:disabled):active{background:var(--neon);color:var(--bg)}
+.pts{color:var(--gold);text-shadow:0 0 8px var(--gold)}
+.plus.rec:not(:disabled){border-color:var(--gold);color:var(--gold);background:rgba(255,209,102,.14);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 6px rgba(255,209,102,.4)}50%{box-shadow:0 0 18px rgba(255,209,102,.9)}}
+.stat.rec .k{color:var(--gold);text-shadow:0 0 8px var(--gold)}
+.advice{font-size:13px;line-height:1.35;border:1px solid rgba(255,209,102,.4);background:rgba(255,209,102,.06);border-radius:4px;padding:8px 10px;margin:6px 0 4px;color:#ffe7a8}
+.advice b{color:var(--gold)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{font-family:'Orbitron';font-size:9.5px;letter-spacing:1px;padding:6px 8px;border-radius:3px;border:1px solid #3a2f5c;color:#a898d0;background:transparent;cursor:pointer}
+.chip.on{border-color:var(--c1);color:#fff;background:var(--cg);box-shadow:0 0 10px var(--cg)}
+.bump{animation:bump .5s ease}@keyframes bump{40%{transform:scale(1.35);color:var(--gold)}}
+.cls-desc{font-size:13.5px;color:var(--ct);margin-top:8px;line-height:1.3}
+.next{font-size:12.5px;color:var(--muted);margin-top:8px;border-top:1px dashed rgba(179,136,255,.3);padding-top:8px;line-height:1.35}
+.next b{color:var(--c1);font-weight:600}
+.quest{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed rgba(0,210,255,.12);cursor:pointer;user-select:none}
+.quest:last-of-type{border:none}
+.chk{width:22px;height:22px;border:1px solid var(--neon);border-radius:3px;flex:none;display:grid;place-items:center;color:var(--bg);font-weight:900;font-size:14px;transition:.25s}
+.quest.done .chk{background:var(--neon);box-shadow:0 0 10px var(--neon)}
+.quest .q{flex:1;font-size:15px;line-height:1.15}.quest .q small{display:block;color:var(--muted);font-size:12px}
+.quest.done .q{color:var(--muted);text-decoration:line-through}
+.rew{font-family:'Orbitron';font-size:10px;color:var(--gold);text-align:right;line-height:1.4}
+input{width:100%;background:#071426;border:1px solid #1b4a75;color:var(--txt);border-radius:4px;padding:9px 10px;font-family:'Rajdhani';font-size:16px}
+input:focus{outline:none;border-color:var(--neon);box-shadow:0 0 8px var(--soft)}
+.btn{width:100%;padding:11px;border:1px solid var(--neon);background:rgba(0,210,255,.12);color:var(--neon);font-family:'Orbitron';letter-spacing:2.5px;font-size:11.5px;border-radius:4px;text-shadow:0 0 8px var(--neon);box-shadow:0 0 14px var(--soft);cursor:pointer;transition:.15s}
+.btn:active{transform:scale(.98);background:rgba(0,210,255,.28)}
+.btn.sm{padding:8px 4px;font-size:10px;letter-spacing:1.5px}
+.btn.danger{border-color:var(--red);color:var(--red);background:rgba(255,77,109,.1);text-shadow:0 0 8px var(--red);box-shadow:0 0 12px rgba(255,77,109,.2)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.qwin{padding:14px 14px 12px}
+.qsub{text-align:center;font-size:14px;color:var(--ct);margin:-2px 0 12px}
+.qhead{font-family:'Orbitron';font-size:10px;letter-spacing:3px;color:var(--muted);text-align:center;margin:12px 0 6px;display:flex;align-items:center;gap:8px}
+.qhead::before,.qhead::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(0,210,255,.4),transparent)}
+.goal{padding:10px 0 11px;border-bottom:1px dashed rgba(0,210,255,.14)}
+.goal:last-child{border:none}
+.gh{display:flex;align-items:center;gap:6px}
+.gn{flex:1;font-size:15.5px;font-weight:600;line-height:1.15}
+.gc{font-family:'Orbitron';font-size:13px;color:var(--neon);text-shadow:0 0 6px var(--neon);font-variant-numeric:tabular-nums;white-space:nowrap}
+.gs{font-size:12px;color:var(--muted);margin-top:1px}
+.goal .bar{height:6px;margin-top:6px}
+.ga{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.ga .btn{width:auto;flex:1;min-width:58px;padding:8px 6px;font-size:10px;letter-spacing:1.2px}
+.ga .btn.run{background:var(--neon);color:var(--bg);text-shadow:none}
+.ga .btn.ok{flex:0 0 auto;border-color:#3a6a90;color:#8fc4e6;box-shadow:none;text-shadow:none}
+.goal.done .gn{color:var(--muted)}.goal.done .gc{color:var(--gold);text-shadow:0 0 6px var(--gold)}
+.goal.done .bar i{background:linear-gradient(90deg,#ff9f1c,var(--gold));box-shadow:0 0 8px var(--gold)}
+.gdone{font-family:'Orbitron';font-size:10px;letter-spacing:2px;color:var(--gold);margin-top:7px}
+.qrew{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--ct);align-items:center}
+.qfoot{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-top:12px;border-top:1px solid rgba(0,210,255,.2);padding-top:9px}
+.qfoot b{font-family:'Orbitron';color:var(--neon);font-weight:500;font-size:12px}
+.dojoday{display:flex;align-items:center;gap:12px;border-color:rgba(255,209,102,.6);box-shadow:0 0 10px rgba(255,209,102,.15)}
+.dojoday .ic{font-size:26px;color:var(--gold);text-shadow:0 0 10px var(--gold)}
+.dojoday .tx{flex:1;font-size:13.5px;line-height:1.25}.dojoday .tx b{color:var(--gold);font-family:'Orbitron';font-size:11px;letter-spacing:1.5px;display:block}
+.dojoday .btn{width:auto;padding:9px 10px;font-size:10px;border-color:var(--gold);color:var(--gold);text-shadow:0 0 8px var(--gold);background:rgba(255,209,102,.1)}
+.timer{font-family:'Orbitron';font-size:42px;text-align:center;color:var(--neon);text-shadow:0 0 14px var(--neon);margin:4px 0 10px;font-variant-numeric:tabular-nums}
+.timer.end{color:var(--gold);text-shadow:0 0 14px var(--gold)}
+.log{font-family:ui-monospace,Menlo,monospace;font-size:11px;line-height:1.6;color:#7fd8ff;max-height:150px;overflow-y:auto}
+.log div{animation:fade .3s}.log em{color:var(--gold);font-style:normal}.log .w{color:var(--red)}
+.warn{font-size:12.5px;color:var(--gold);border:1px solid rgba(255,209,102,.45);background:rgba(255,209,102,.06);padding:7px 9px;border-radius:4px;margin-top:8px;display:none;line-height:1.3}
+.kata{display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-bottom:1px dashed rgba(0,210,255,.12)}
+.kata span{color:var(--muted);font-size:12px}
+.nav{position:absolute;bottom:0;left:0;right:0;padding-bottom:env(safe-area-inset-bottom);border-top:1px solid #14395e;background:rgba(5,10,20,.96);display:grid;grid-template-columns:repeat(4,1fr);font-family:'Orbitron';font-size:9px;letter-spacing:1px;z-index:5}
+.nav button{background:none;border:none;border-top:2px solid transparent;color:var(--muted);padding:9px 0 10px;font:inherit;letter-spacing:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+.nav button span{font-size:19px;line-height:1}
+.nav button.on{color:var(--neon);text-shadow:0 0 8px var(--neon);border-top-color:var(--neon)}
+.ov{position:absolute;inset:0;background:rgba(2,6,14,.84);display:none;place-items:center;padding:22px;z-index:20;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.ov.on{display:grid;animation:fade .3s}
+.alert{border:1px solid var(--neon);box-shadow:0 0 26px rgba(0,210,255,.4),inset 0 0 30px rgba(0,210,255,.1);background:rgba(6,18,36,.92);border-radius:6px;padding:22px 16px;text-align:center;width:100%;animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.7);opacity:0}}
+.alert .h{font-family:'Orbitron';font-size:11px;letter-spacing:3px;margin-bottom:12px}
+.alert .big{font-family:'Orbitron';font-weight:900;font-size:30px;letter-spacing:2px;margin:6px 0}
+.alert p{font-size:14.5px;margin:10px 0 16px;line-height:1.35}
+.alert.v{border-color:var(--c1);box-shadow:0 0 34px var(--cg),inset 0 0 34px var(--cg);background:var(--cbg)}
+.alert.v .h,.alert.v .big{color:var(--ct);text-shadow:0 0 12px var(--c1),0 0 2px var(--c1)}
+.alert.v .sub{color:var(--ct);opacity:.8}.alert.v .tt{color:var(--c1);letter-spacing:1px;font-size:13px}
+.alert.v .btn{border-color:var(--c1);color:var(--c1);background:var(--cg);text-shadow:0 0 8px var(--c1)}
+.kanji{font-size:54px;color:#fff;text-shadow:0 0 18px var(--c1),0 0 44px var(--c1),0 0 4px var(--c2);margin:4px 0;animation:kpulse 1.8s ease-in-out infinite}
+@keyframes kpulse{50%{text-shadow:0 0 28px var(--c1),0 0 70px var(--c1),0 0 6px var(--c2)}}
+.toast{position:absolute;left:14px;right:14px;top:calc(12px + env(safe-area-inset-top));z-index:15;pointer-events:none;display:flex;flex-direction:column;gap:6px}
+.toast div{background:rgba(6,18,36,.95);border:1px solid var(--neon);border-radius:4px;padding:8px 10px;font-size:13.5px;box-shadow:0 0 14px var(--soft);animation:tin .35s ease, tout .4s ease 2.4s forwards}
+@keyframes tin{from{transform:translateY(-14px);opacity:0}}@keyframes tout{to{opacity:0;transform:translateY(-8px)}}
+.onb{position:absolute;inset:0;z-index:30;overflow-y:auto;background:radial-gradient(ellipse at top,#0a1a33 0%,var(--bg) 70%);padding:calc(30px + env(safe-area-inset-top)) 18px calc(30px + env(safe-area-inset-bottom));display:none}
+.onb.on{display:block;animation:fade .5s}
+.onb .lbl{margin:10px 0 4px}
+.onb .err{color:var(--red);font-size:13px;min-height:18px;margin-top:6px;text-align:center}
+.onb h1{font-family:'Orbitron';font-weight:900;letter-spacing:5px;text-align:center;color:var(--neon);text-shadow:0 0 12px var(--neon),0 0 30px rgba(0,210,255,.4);font-size:24px;margin:6px 0 4px}
+.hidden-file{display:none}
+</style>
+</head>
+<body>
+
+<div class="phone" id="phone">
+ <canvas id="fx"></canvas>
+ <div class="toast" id="toast"></div>
+ <div class="scr" id="scr">
+
+  <!-- ============ STATO ============ -->
+  <section class="tab on" id="t-stato">
+   <div class="panel">
+    <div class="ttl c"><b>STATO</b></div>
+    <div class="flex">
+     <div class="rank" id="rank">E</div>
+     <div style="flex:1;min-width:0">
+      <div class="val" style="font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="pname">-</div>
+      <div style="font-size:13px;color:var(--muted)" id="pgrade">Spadaccino</div>
+      <span class="badge" id="badge">剣士 KENSHI</span>
+     </div>
+     <div style="text-align:right"><div class="lbl">Livello</div><div class="val" style="font-size:30px" id="lvl">1</div></div>
+    </div>
+    <div class="flex" style="margin-top:12px"><span class="lbl">XP</span><span style="font-size:12.5px" id="xptxt">0 / 0</span></div>
+    <div class="bar"><i id="xpbar"></i></div>
+   </div>
+
+   <div class="panel clspanel">
+    <div class="flex"><span class="ttl">VIA DEL FULMINE</span><span class="val" style="font-size:11px;color:var(--ct)" id="stage">1/10</span></div>
+    <div class="track" id="track"></div>
+    <div class="val" style="font-size:15px;color:var(--ct);margin-top:10px" id="clsname">Kenshi</div>
+    <div class="cls-desc" id="clsdesc" style="margin-top:3px"></div>
+    <div class="next" id="next"></div>
+   </div>
+
+   <div class="panel">
+    <div class="flex" style="margin-bottom:4px"><span class="ttl">STATISTICHE</span><span style="font-size:13.5px">Punti: <b class="pts val" id="pts">0</b></span></div>
+    <div class="advice" id="advice"></div>
+    <div id="stats"></div>
+    <div class="g2 confirm" id="confirm">
+     <button class="btn sm" onclick="undoAll()">↺ ANNULLA</button>
+     <button class="btn sm" style="border-color:var(--gold);color:var(--gold);text-shadow:0 0 8px var(--gold)" onclick="confirmPts()">✓ CONFERMA</button>
+    </div>
+   </div>
+
+   <div class="panel">
+    <div class="flex"><span class="ttl">MAIN QUEST · PESO</span><span style="font-size:12.5px;color:var(--muted)" id="lost"></span></div>
+    <div class="flex" style="margin-top:8px"><span class="val" style="font-size:11px;color:var(--muted)" id="wstart">-</span><span class="val pts" style="font-size:18px" id="wnow"></span><span class="val" style="font-size:11px;color:var(--muted)" id="wtarget">-</span></div>
+    <div class="bar gold"><i id="wbar"></i></div>
+    <svg id="chart" viewBox="0 0 300 80" preserveAspectRatio="none" style="width:100%;height:80px;margin-top:8px"></svg>
+    <div class="g2" style="grid-template-columns:1fr auto;margin-top:6px">
+     <input id="win" type="number" step="0.1" inputmode="decimal" placeholder="Nuovo peso (kg)">
+     <button class="btn sm" style="width:96px" onclick="logWeight()">REGISTRA</button>
+    </div>
+    <div class="warn" id="warn"></div>
+   </div>
+  </section>
+
+  <!-- ============ QUEST ============ -->
+  <section class="tab" id="t-quest">
+   <div id="recov"></div>
+   <div class="panel dojoday" id="dojoday"></div>
+   <div class="panel qwin">
+    <div class="ttl c"><b>! QUEST GIORNALIERA</b></div>
+    <div class="qsub">Preparazione per diventare il più forte del dōjō</div>
+    <div class="qhead">OBIETTIVI</div>
+    <div id="quests"></div>
+    <div class="qhead">RICOMPENSE</div>
+    <div class="qrew"><span>◆ XP per ogni obiettivo</span><span>◆ Addestramento statistiche</span><span class="pts">◆ +1 Punto Statistica se completi tutto</span></div>
+    <div class="qfoot"><span>Tempo rimanente <b id="qleft">--:--:--</b></span><span>Streak <b id="streak">0</b> giorni</span></div>
+   </div>
+   <div class="panel fixwin" id="fixes"></div>
+  </section>
+
+  <!-- ============ DOJO ============ -->
+  <section class="tab" id="t-dojo">
+   <div id="missed"></div>
+
+   <!-- 5. Calendario presenze -->
+   <div class="panel">
+    <div class="flex"><span class="ttl">PRESENZE</span><span style="font-size:12.5px;color:var(--muted)" id="nextles"></span></div>
+    <div class="flex cal-nav"><button class="info" style="margin:0" onclick="calMove(-1)" aria-label="Mese precedente">‹</button><span class="val" style="font-size:12px;letter-spacing:2px" id="calm"></span><button class="info" style="margin:0" onclick="calMove(1)" aria-label="Mese successivo">›</button></div>
+    <div class="cal" id="cal"></div>
+    <div class="cal-leg"><span><i class="l-att"></i>presente</span><span><i class="l-miss"></i>saltata</span><span><i class="l-sch"></i>in programma</span></div>
+    <div class="g3" style="text-align:center;margin-top:10px">
+     <div><div class="val" style="font-size:20px" id="dfreq">-</div><div class="lbl">Frequenza</div></div>
+     <div><div class="val" style="font-size:20px" id="dstreak">-</div><div class="lbl">Streak</div></div>
+     <div><div class="val" style="font-size:20px" id="dtot">-</div><div class="lbl">Lezioni</div></div>
+    </div>
+    <div class="lbl" style="margin:12px 0 5px">Giorni di lezione</div>
+    <div class="wdays" id="wdays"></div>
+   </div>
+
+   <!-- 1. Diario di lezione -->
+   <div class="panel">
+    <div class="flex"><span class="ttl">DIARIO DI LEZIONE<button class="info" onclick="info('keiko')" aria-label="Cos'è">i</button></span></div>
+    <button class="btn" style="margin:10px 0 4px" onclick="openLessonForm()">⛩ REGISTRA LEZIONE</button>
+    <div id="diary"></div>
+   </div>
+
+   <!-- 2. Kata con padronanza -->
+   <div class="panel">
+    <div class="flex"><span class="ttl">KATA<button class="info" onclick="info('kata')" aria-label="Cos'è un kata">i</button></span><span style="font-size:12px;color:var(--muted)" id="katasum"></span></div>
+    <div id="katas" style="margin-top:6px"></div>
+    <div class="g2" style="grid-template-columns:1fr auto;margin-top:10px"><input id="kin" placeholder="Nuovo kata (es. nome della forma)"><button class="btn sm" style="width:90px" onclick="addKata()">AGGIUNGI</button></div>
+   </div>
+  </section>
+
+  <!-- ============ SISTEMA ============ -->
+  <section class="tab" id="t-sys">
+   <div class="panel">
+    <div class="ttl c"><b>SALVATAGGIO</b></div>
+    <p style="font-size:13.5px;color:var(--muted);margin-bottom:10px;line-height:1.3">Esporta il salvataggio in JSON e conservalo su iCloud Drive o File. Su un nuovo dispositivo, importalo.</p>
+    <div class="g2" style="margin-bottom:8px"><button class="btn sm" onclick="exportSave()">⇩ ESPORTA</button><button class="btn sm" onclick="$('impfile').click()">⇧ IMPORTA</button></div>
+    <input type="file" id="impfile" class="hidden-file" accept="application/json,.json" onchange="importSave(this)">
+    <p style="font-size:12px;color:var(--muted);margin-bottom:10px" id="lastexp"></p>
+    <button class="btn sm" style="margin-bottom:8px" onclick="askDailyReset()">↺ AZZERA LE QUEST DI OGGI</button>
+    <button class="btn sm danger" onclick="askReset()">RESET TOTALE</button>
+   </div>
+   <div class="panel">
+    <div class="ttl" style="margin-bottom:6px">EFFETTI VISIVI</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Animazioni di sottofondo della tua classe. "Bassi" consuma meno batteria.</p>
+    <div class="fxopt" id="fxopt"></div>
+   </div>
+   <div class="panel"><div class="ttl" style="margin-bottom:6px">LOG DEL SISTEMA</div><div class="log" id="log"></div></div>
+   <div class="panel">
+    <div class="ttl" style="margin-bottom:6px">PROFILO</div>
+    <div style="font-size:14px;line-height:1.7" id="profbox"></div>
+    <button class="btn sm" style="margin-top:8px" onclick="editProfile()">MODIFICA PROFILO</button>
+   </div>
+   <div class="panel">
+    <div class="ttl" style="margin-bottom:6px">ARCHIVIO DELLA VIA</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Rivivi il risveglio degli stadi che hai raggiunto.</p>
+    <div class="chips" id="fxdemo"></div>
+   </div>
+  </section>
+ </div>
+
+ <nav class="nav">
+  <button class="on" data-t="stato"><span>◈</span>STATO</button>
+  <button data-t="quest"><span>☰</span>QUEST</button>
+  <button data-t="dojo"><span>⛩</span>DOJO</button>
+  <button data-t="sys"><span>⚙</span>SISTEMA</button>
+ </nav>
+
+ <div class="ov" id="ov"><div id="ovbox" style="width:100%"></div></div>
+
+ <!-- ============ INIZIALIZZAZIONE (primo avvio) ============ -->
+ <div class="onb" id="onb">
+  <h1>IL SISTEMA</h1>
+  <p style="text-align:center;color:var(--muted);font-size:13px;letter-spacing:2px;margin-bottom:18px">VIA DEL FULMINE</p>
+  <div class="panel">
+   <div class="ttl c"><b>! NOTIFICA</b></div>
+   <p style="text-align:center;font-size:15px;line-height:1.35;margin-bottom:8px">Sei stato scelto come <span style="color:var(--neon)">Giocatore</span>.<br><span style="color:var(--muted)">Registra i tuoi parametri per inizializzare il Sistema.</span></p>
+   <div class="lbl">Nome</div><input id="o-name" autocomplete="given-name" placeholder="Il tuo nome">
+   <div class="g2"><div><div class="lbl">Età</div><input id="o-age" type="number" inputmode="numeric" placeholder="anni"></div>
+    <div><div class="lbl">Altezza (cm)</div><input id="o-h" type="number" inputmode="numeric" placeholder="cm"></div></div>
+   <div class="g2"><div><div class="lbl">Peso attuale (kg)</div><input id="o-w" type="number" step="0.1" inputmode="decimal" value="100"></div>
+    <div><div class="lbl">Peso obiettivo (kg)</div><input id="o-t" type="number" step="0.1" inputmode="decimal" value="80"></div></div>
+   <div class="lbl">Grado attuale nel dojo</div><input id="o-g" placeholder="Es. senza grado, 6° kyū">
+   <div class="err" id="o-err"></div>
+   <button class="btn" style="margin-top:6px" onclick="initPlayer()">ACCETTA</button>
+   <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:10px">Partenza: Livello 1 · Rango E · Stadio 1/10 Kenshi</p>
+  </div>
+  <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:14px">Hai già un salvataggio? <a href="#" style="color:var(--neon)" onclick="$('impfile').click();return false">Importalo</a></p>
+ </div>
+</div>
+
+<script>
+/* ---------- Dati statici ---------- */
+const STATS=[['FOR','Forza','Potenza del taglio'],['VEL','Velocità','Ashisabaki, rapidità'],['RES','Resistenza','Fiato, tenuta'],['TEC','Tecnica','Suburi, postura, kata'],['DIS','Disciplina','Costanza, meditazione']];
+/* Glossario: aperto dal pulsante (i) accanto a termini ed esercizi */
+const GLOSS={
+ suburi:{t:'Suburi',k:'素振り',m:'<i>Su</i> = semplice, nudo · <i>buri</i> (da <i>furu</i>) = brandire, far oscillare.',d:'Tagli a vuoto ripetuti con il bokken. Sono la base della tecnica: traiettoria sulla linea centrale, presa, postura e coordinazione tra fianchi e braccia. <b>Lenti</b> significa curare ogni taglio dall\'inizio alla fine, senza cercare la velocità.',tip:'Spalle rilassate, tutto il movimento parte dai fianchi. Ginocchia leggermente flesse, mai bloccate.'},
+ ashisabaki:{t:'Ashisabaki',k:'足捌き',m:'<i>Ashi</i> = piede, gamba · <i>sabaki</i> = gestire, muovere con controllo.',d:'Il lavoro di gambe: come ti sposti per trovare la distanza giusta e restare in equilibrio.<br>• <b>Suri-ashi</b>: piedi che strisciano senza alzarsi.<br>• <b>Okuri-ashi</b>: parte il piede dal lato in cui vai, l\'altro segue, senza incrociarli.<br>• <b>Ayumi-ashi</b>: passi alternati, come camminare.<br>• <b>Tsugi-ashi</b>: il piede dietro si avvicina, poi avanza quello davanti.<br>• <b>Hiraki-ashi</b>: passo diagonale o laterale per uscire dalla linea d\'attacco.',tip:'A basso impatto: i piedi strisciano e non saltano. Chiedi al Sensei quali passi usa la vostra scuola.'},
+ cardio:{t:'Cardio a basso impatto',k:'',m:'Allenamento aerobico che non sottopone le articolazioni a urti.',d:'30 minuti di camminata veloce, cyclette, ellittica o nuoto. Alzano il fiato e la tenuta nei combattimenti senza i colpi su ginocchia e caviglie della corsa su asfalto.',tip:'Ritmo giusto: riesci a parlare, ma non a cantare.'},
+ forza:{t:'Rinforzo muscolare e core',k:'',m:'Gambe, spinta e muscoli del tronco: la base della potenza del taglio.',d:'• <b>Squat</b>: anche verso una sedia (box squat), scendendo controllato.<br>• <b>Piegamenti</b>: al muro, su un tavolo o sulle ginocchia, poi via via più bassi.<br>• <b>Plank</b>: avambracci a terra, corpo in linea. Usa il timer.',tip:'Ginocchia sempre in linea con le punte dei piedi. Meglio meno ripetizioni fatte bene.'},
+ mokuso:{t:'Mokusō',k:'黙想',m:'<i>Moku</i> = silenzio · <i>sō</i> = pensiero, contemplazione.',d:'La breve meditazione silenziosa che apre e chiude la lezione. Respiri lenti e profondi con la pancia, sguardo basso, mente libera. Allena calma, attenzione e sangue freddo davanti all\'avversario.',tip:'A casa siediti su una sedia o su un cuscino alto: restare a lungo in seiza (in ginocchio sui talloni) può affaticare le ginocchia.'},
+ kata:{t:'Kata',k:'型',m:'Forma, modello.',d:'Sequenza codificata di tecniche, spesso eseguita in coppia, che custodisce i principi della scuola. Si ripete per tutta la vita, cercando ogni volta più precisione.',tip:'Annota la data in cui l\'hai imparato: il registro tecnico diventa il tuo percorso.'},
+ keiko:{t:'Keiko nisshi',k:'稽古日誌',m:'<i>Keiko</i> = pratica, allenamento (lett. "riflettere sull\'antico") · <i>nisshi</i> = diario.',d:'Il diario di pratica. Annotare dopo ogni lezione cosa hai fatto e cosa ti ha corretto il Sensei trasforma una lezione in un passo avanti misurabile: le correzioni diventano Quest Correttive nei giorni successivi.',tip:'Scrivi la correzione con le parole del Sensei, finché la ricordi bene.'},
+ kumitachi:{t:'Kumitachi',k:'組太刀',m:'<i>Kumi</i> = in coppia, incontro · <i>tachi</i> = spada.',d:'Forme eseguite in coppia con la spada (spesso bokken): uno attacca, l\'altro risponde secondo una sequenza codificata. Allenano distanza, tempo e intenzione reale.',tip:''},
+ kihon:{t:'Kihon',k:'基本',m:'Fondamentali, base.',d:'Gli esercizi fondamentali: impugnatura, guardie, tagli, spostamenti. Si tornano a studiare per tutta la vita.',tip:''},
+ dojo:{t:'Dōjō',k:'道場',m:'<i>Dō</i> = via · <i>jō</i> = luogo.',d:'Il "luogo della via": la sala dove si pratica e si studia la disciplina, con rispetto per il Sensei e i compagni.',tip:''}
+};
+/* =====================================================================
+   LA VIA DEL FULMINE — 10 stadi, da Kenshi a Raijin.
+   Ogni stadio richiede un livello minimo e soglie sulle statistiche.
+   Le statistiche non scendono mai, quindi gli stadi si possono solo salire.
+   col = colore RGB del tema e dei fulmini · dark = probabilità di fulmini neri
+   ===================================================================== */
+const PATH=[
+ {n:'Kenshi',  k:'剣士',jp:'KENSHI',  t:'Spadaccino Novizio',  lvl:1, req:{},col:'0,210,255',  dark:0,
+  d:'La via è appena iniziata. Ogni suburi conta.'},
+ {n:'Hibana',  k:'火花',jp:'HIBANA',  t:'La Scintilla',        lvl:5, req:{VEL:13,TEC:13,FOR:12},col:'255,209,102',dark:0,
+  d:'La prima scintilla. Il corpo inizia a rispondere all\'allenamento.'},
+ {n:'Raikō',   k:'雷光',jp:'RAIKŌ',   t:'Bagliore del Fulmine', lvl:8, req:{VEL:16,TEC:16,FOR:14},col:'159,232,255',dark:0,
+  d:'Una luce lontana nel cielo. I movimenti diventano più puliti.'},
+ {n:'Inazuma', k:'稲妻',jp:'INAZUMA', t:'Il Lampo',            lvl:10,req:{VEL:20,TEC:20,FOR:16},col:'77,163,255', dark:0,
+  d:'Il lampo precede il tuono: rapido e preciso, la potenza sta arrivando.'},
+ {n:'Jinrai',  k:'迅雷',jp:'JINRAI',  t:'Il Tuono Improvviso', lvl:14,req:{VEL:23,TEC:22,FOR:20,RES:15},col:'45,226,255',dark:0,
+  d:'Colpisci senza preavviso. La distanza si chiude in un istante.'},
+ {n:'Raimei',  k:'雷鳴',jp:'RAIMEI',  t:'Il Rombo',            lvl:18,req:{VEL:26,TEC:25,FOR:23,RES:18},col:'111,107,255',dark:0,
+  d:'Il tuono si fa sentire. La tua presenza nel dōjō cresce.'},
+ {n:'Shiden',  k:'紫電',jp:'SHIDEN',  t:'Lama Fulminea',       lvl:23,req:{VEL:29,TEC:28,FOR:26,DIS:20},col:'177,77,255',dark:.1,
+  d:'Il lampo violaceo di una lama sguainata: un solo taglio, perfetto.'},
+ {n:'Narukami',k:'鳴神',jp:'NARUKAMI',t:'Il Dio Tonante',      lvl:28,req:{VEL:31,TEC:31,FOR:29,RES:22,DIS:22},col:'224,64,138',dark:.25,
+  d:'Il cielo stesso risponde ai tuoi movimenti.'},
+ {n:'Raikiri', k:'雷切',jp:'RAIKIRI', t:'Il Taglia-Fulmine',   lvl:34,req:{VEL:33,TEC:33,FOR:32,RES:25,DIS:25},col:'255,47,69',dark:.4,
+  d:'Come la leggendaria spada che tagliò un fulmine: nulla è troppo veloce per te.'},
+ {n:'Raijin',  k:'雷神',jp:'RAIJIN',  t:'Dio del Fulmine',     lvl:40,req:{VEL:35,TEC:35,FOR:35,RES:28,DIS:28},col:'255,30,60',dark:.55,
+  d:'Velocità fulminea, precisione assoluta e potenza devastante. Il più forte del dōjō.'}
+];
+const LAST=PATH.length-1;
+const meets=(c,v,l)=>l>=c.lvl&&Object.entries(c.req).every(([k,n])=>v[k]>=n);
+function reqLine(c,v){
+ const lv=S.lvl>=c.lvl?`<span style="color:var(--gold)">Lv ${S.lvl}/${c.lvl} ✓</span>`:`Lv ${S.lvl}/${c.lvl}`;
+ return[lv,...Object.entries(c.req).map(([k,n])=>v[k]>=n?`<span style="color:var(--gold)">${k} ${v[k]}/${n} ✓</span>`:`${k} ${v[k]}/${n}`)].join(' · ')}
+/* Tema colori dello stadio applicato come variabili CSS */
+function applyTheme(i){
+ const st=PATH[i],[r,g,b]=st.col.split(',').map(Number),ph=$('phone').style,mix=(c,w)=>Math.round(c+(255-c)*w);
+ ph.setProperty('--c1',`rgb(${st.col})`);ph.setProperty('--cg',`rgba(${st.col},.42)`);
+ ph.setProperty('--c2',i>=7?'#000':'#fff');ph.setProperty('--cbg',`rgba(${Math.round(r*.08)},${Math.round(g*.08)},${Math.round(b*.08)},.94)`);
+ ph.setProperty('--ct',`rgb(${mix(r,.75)},${mix(g,.75)},${mix(b,.75)})`);
+}
+const QUESTS=[
+ /* type: 'count' = contatore con incrementi · 'time' = cronometro (secondi) */
+ {id:'suburi',g:'suburi',n:'Suburi lenti',s:'Controllo, non velocità',type:'count',target:100,rt:60,unit:'',steps:[10,25],xp:20,st:'TEC',dojo:true},
+ {id:'ashi',g:'ashisabaki',n:'Ashisabaki · lavoro di gambe',s:'Okuri-ashi, hiraki-ashi',type:'count',target:15,unit:' min',steps:[5],xp:20,st:'VEL',dojo:true},
+ {id:'cardio',g:'cardio',n:'Cardio a basso impatto',s:'Camminata veloce / cyclette',type:'count',target:30,rt:20,unit:' min',steps:[5,10],xp:25,st:'RES'},
+ {id:'forza',g:'forza',n:'Rinforzo · squat, piegamenti, plank',s:'Ogni giro: 12 squat · 8 piegamenti · plank',type:'count',target:3,rt:2,unit:' giri',steps:[1],stepLabel:'+1 GIRO',xp:25,st:'FOR'},
+ {id:'medit',g:'mokuso',n:'Mokusō · meditazione',s:'Respiro lento, mente ferma',type:'count',target:10,unit:' min',steps:[5],xp:15,st:'DIS'}
+];
+const xpFor=l=>Math.round(45*Math.pow(l,1.15));
+const rankOf=l=>l>=70?'S':l>=50?'A':l>=35?'B':l>=20?'C':l>=10?'D':'E';
+
+/* ---------- Stato del giocatore e salvataggio ----------
+   Tutto resta nel localStorage del dispositivo. Usa Esporta per una copia di sicurezza. */
+const KEY='sistema-kenjutsu-v1';
+let S;
+function freshState(p){
+ const t=ymd(new Date());
+ return {v:1,created:t,profile:p,
+  lvl:1,xp:0,pts:0,cls:0,pend:{FOR:0,VEL:0,RES:0,TEC:0,DIS:0},
+  st:{FOR:10,VEL:10,RES:10,TEC:10,DIS:10},tr:{FOR:0,VEL:0,RES:0,TEC:0,DIS:0},
+  day:t,done:{},prog:{},streak:0,lastFull:null,
+  w:[{t:Date.now(),v:p.start}],rec:p.start,
+  days:[3,5],skip:[],recov:null,lessons:[],kata:[],fixes:[],
+  fx:'alti',lastExport:null,log:[]};
+}
+/* Completa un salvataggio (anche importato o di una versione precedente) con i campi mancanti */
+function normalize(o){
+ const base=freshState(o.profile||{name:'Giocatore',age:'',height:'',start:100,target:80,grade:''});
+ const def={pend:base.pend,st:base.st,tr:base.tr};
+ const r=Object.assign(base,o);
+ for(const k in def)r[k]=Object.assign({},def[k],o[k]||{});
+ if(!Array.isArray(r.w)||!r.w.length)r.w=[{t:Date.now(),v:r.profile.start}];
+ return r;
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function load(){try{const r=localStorage.getItem(KEY);return r?normalize(JSON.parse(r)):null}catch(e){return null}}
+/* Nuovo giorno: Daily Quest rigenerate, streak azzerato se ieri non le hai completate tutte */
+function rollDay(){
+ const t=today();if(S.day===t)return false;
+ const y=ymd(addD(new Date(),-1));
+ if(S.lastFull!==y&&S.lastFull!==t&&S.streak){log(`Streak interrotto dopo ${S.streak} giorni.`,'w');S.streak=0}
+ S.day=t;S.done={};S.prog={};log('Nuovo giorno. Daily Quest rigenerate.');
+ return true;
+}
+
+/* ---------- Utility UI ---------- */
+const $=id=>document.getElementById(id);
+function toast(m){const d=document.createElement('div');d.innerHTML=m;$('toast').appendChild(d);setTimeout(()=>d.remove(),2900)}
+function log(m,cls){S.log.unshift(`<div${cls?' class="'+cls+'"':''}>[SISTEMA] ${m}</div>`);S.log=S.log.slice(0,40);if($('log'))$('log').innerHTML=S.log.join('')}
+const queue=[];let ovOpen=false;
+function overlay(html,fn){queue.push({html,fn});if(!ovOpen)nextOv()}
+function nextOv(){const it=queue.shift();if(!it){ovOpen=false;$('ov').classList.remove('on');return}ovOpen=true;$('ovbox').innerHTML=it.html;$('ov').classList.add('on');if(it.fn)it.fn()}
+function closeOv(){nextOv()}
+function bump(id){const e=$(id);if(!e)return;e.classList.remove('bump');void e.offsetWidth;e.classList.add('bump')}
+
+/* ---------- XP / livelli ---------- */
+function addXP(n,src){
+ S.xp+=n;log(`${src}. <em>+${n} XP</em>`);
+ while(S.xp>=xpFor(S.lvl)){
+  S.xp-=xpFor(S.lvl);S.lvl++;S.pts+=3;
+  const r=rankOf(S.lvl),rUp=r!==rankOf(S.lvl-1);
+  log(`LEVEL UP! Livello ${S.lvl}. <em>+3 Punti Statistica</em>`);
+  overlay(`<div class="alert"><div class="h" style="color:var(--neon)">◆ LEVEL UP ◆</div>
+   <div class="big" style="color:var(--neon);text-shadow:0 0 16px var(--neon)">LIVELLO ${S.lvl}</div>
+   ${rUp?`<div style="font-family:Orbitron;color:var(--gold);letter-spacing:2px;text-shadow:0 0 10px var(--gold)">NUOVO RANGO: ${r}</div>`:''}
+   <p>Hai ricevuto <b class="pts">3 Punti Statistica</b>.<br>Assegnali nella Finestra di Stato.</p>
+   <button class="btn" onclick="closeOv()">CONFERMA</button></div>`);
+ }
+ checkClass();render();
+}
+function train(stat){
+ S.tr[stat]++;
+ if(S.tr[stat]>=5){S.tr[stat]=0;S.st[stat]++;log(`${stat} aumentata a ${S.st[stat]}.`);setTimeout(()=>bump('n-'+stat),50)}
+ checkClass();
+}
+/* Assegnazione punti in due fasi: + / − modificano una bozza, CONFERMA la rende definitiva.
+   Il − agisce solo sulla bozza: le statistiche guadagnate con allenamento e peso non si possono togliere. */
+const eff=k=>S.st[k]+S.pend[k];
+const pendTot=()=>Object.values(S.pend).reduce((a,b)=>a+b,0);
+function spend(stat){if(S.pts<1)return;S.pts--;S.pend[stat]++;render();bump('n-'+stat)}
+function unspend(stat){if(S.pend[stat]<1)return;S.pend[stat]--;S.pts++;render();bump('n-'+stat)}
+function undoAll(){S.pts+=pendTot();for(const k in S.pend)S.pend[k]=0;render();toast('Assegnazione annullata')}
+function confirmPts(){
+ const parts=Object.entries(S.pend).filter(([k,n])=>n>0);if(!parts.length)return;
+ parts.forEach(([k,n])=>{S.st[k]+=n;S.pend[k]=0});
+ log(`Punti confermati: ${parts.map(([k,n])=>`${k} +${n}`).join(', ')}`);toast('Statistiche aggiornate');
+ checkClass();render();
+}
+
+/* ---------- Cambio classe ---------- */
+function computeClass(){
+ let i=0;for(let j=1;j<=LAST;j++)if(meets(PATH[j],S.st,S.lvl))i=j;return i;
+}
+function checkClass(){
+ const c=computeClass();if(c<=S.cls)return;
+ for(let j=S.cls+1;j<=c;j++)log(`RISVEGLIO: stadio ${j+1}/10 · ${PATH[j].n} (${PATH[j].t})`);
+ S.cls=c;classAlert(c);
+}
+function classAlert(i){
+ const C=PATH[i];
+ overlay(`<div class="alert v"><div class="h">◆ ${i===LAST?'VIA DEL FULMINE COMPLETATA':'RISVEGLIO · VIA DEL FULMINE'} ◆</div>
+  <div class="sub" style="font-size:13px">Stadio ${i+1} di 10</div>
+  <div class="kanji">${C.k}</div><div class="big" style="font-size:22px">${C.jp}</div>
+  <div class="tt">${C.t}</div>
+  <p class="sub">${C.d}</p><button class="btn" onclick="closeOv()">ACCETTA IL POTERE</button></div>`,
+  ()=>{applyTheme(i);fxBurst(i)});
+}
+function previewClass(i){if(i>S.cls)return;classAlert(i)}
+function nextHint(){
+ if(S.cls===LAST)return'<b>Hai raggiunto la vetta.</b> Sei Raijin, il più forte del dōjō.';
+ const t=PATH[S.cls+1];
+ return`Prossimo risveglio — <b>${t.k} ${t.n}</b>, ${t.t}<br>${reqLine(t,S.st)}`;
+}
+function trackHTML(){
+ return PATH.map((p,i)=>`<div class="stp ${i<S.cls?'past':i===S.cls?'cur':''}" title="${p.n}"><span>${p.k}</span></div>`).join('<i class="lnk"></i>');
+}
+/* Consiglio: alza le statistiche che mancano per lo stadio successivo, partendo dalla più lontana */
+function advise(){
+ const v={};for(const k in S.st)v[k]=eff(k);
+ if(S.cls===LAST){const min=Math.min(...Object.values(v)),rec=Object.keys(v).filter(k=>v[k]===min);
+  return{rec,txt:`Sei <b>Raijin</b>. Continua a crescere: alza la statistica più bassa, <b>${rec.join(', ')} (${min})</b>.`}}
+ const t=PATH[S.cls+1],miss=Object.entries(t.req).filter(([k,n])=>v[k]<n).sort((a,b)=>(v[a[0]]-a[1])-(v[b[0]]-b[1]));
+ if(!miss.length)return{rec:[],txt:`Statistiche pronte per <b>${t.n}</b>. Manca solo il <b>Livello ${t.lvl}</b>: continua con le Daily Quest.`};
+ return{rec:miss.map(([k])=>k),txt:`Verso <b>${t.k} ${t.n}</b> (stadio ${S.cls+2}/10). Mancano: <b>${miss.map(([k,n])=>`${k} +${n-v[k]}`).join(', ')}</b>${S.lvl<t.lvl?` · Livello ${t.lvl}`:''}`};
+}
+
+/* ---------- Peso ---------- */
+/* Traguardi ogni 5 kg tra peso iniziale e obiettivo (con 100 → 80: 95, 90, 85, 80) */
+function milestones(){const P=S.profile,m=[];for(let x=Math.floor((P.start-.01)/5)*5;x>P.target;x-=5)m.push(x);m.push(P.target);return m}
+function logWeight(){
+ const v=parseFloat($('win').value.replace(',','.'));
+ if(!(v>30&&v<300)){toast('Inserisci un peso valido');return}
+ $('win').value='';$('win').blur();const now=Date.now();
+ const ref=S.w.filter(e=>now-e.t>=7*864e5).pop()||S.w[0];
+ const weeks=Math.max(1,(now-ref.t)/(7*864e5)),rate=(ref.v-v)/weeks;
+ S.w.push({t:now,v});log(`Peso registrato: ${v.toFixed(1)} kg.`);
+ let xp=5,src='Pesata registrata';
+ if(v<S.rec){
+  const diff=S.rec-v,kg=Math.floor(S.rec/2)-Math.floor(v/2); /* +1 VEL ogni 2 kg persi */
+  const fast=rate>1.2;
+  xp+=fast?Math.round(50*diff):Math.round(150*diff);src=`Nuovo record peso ${v.toFixed(1)} kg`;
+  S.rec=v;
+  if(kg>0){S.st.VEL+=kg;log(`Soglia di 2 kg superata! <em>VEL +${kg}</em>`);setTimeout(()=>bump('n-VEL'),50)}
+  milestones().forEach(m=>{if(v<=m&&v+diff>m){S.pts+=3;log(`TRAGUARDO ${m} kg raggiunto! <em>+3 Punti Statistica</em>`);
+   overlay(`<div class="alert"><div class="h" style="color:var(--gold)">◆ ${m<=S.profile.target?'MAIN QUEST COMPLETATA':'TRAGUARDO MAIN QUEST'} ◆</div><div class="big pts">${m} KG</div><p>${m<=S.profile.target?'Hai raggiunto il tuo obiettivo.':'Il tuo corpo si sta trasformando.'}<br>Ricompensa: <b class="pts">3 Punti Statistica</b> da assegnare dove vuoi.</p><button class="btn" onclick="closeOv()">CONTINUA</button></div>`)}});
+  $('warn').style.display=fast?'block':'none';
+  $('warn').innerHTML=fast?`⚠ Ritmo ${rate.toFixed(1)} kg/settimana: troppo rapido. Il Sistema riduce il bonus. Punta a 0,5–1 kg/sett. per proteggere ginocchia e caviglie.`:'';
+  if(fast)log('Ritmo di calo troppo rapido. Bonus ridotto.','w');
+ }
+ addXP(xp,src);
+}
+function drawChart(){
+ const T=S.profile.target,pts=S.w,min=Math.min(T,...pts.map(p=>p.v))-1,max=Math.max(...pts.map(p=>p.v))+1;
+ const t0=pts[0].t,t1=pts[pts.length-1].t||t0+1,sx=t=>(t1===t0?150:(t-t0)/(t1-t0)*290+5),sy=v=>75-(v-min)/(max-min)*70;
+ const line=pts.map(p=>`${sx(p.t).toFixed(1)},${sy(p.v).toFixed(1)}`).join(' ');
+ $('chart').innerHTML=`<line x1="0" x2="300" y1="${sy(T)}" y2="${sy(T)}" stroke="#ffd166" stroke-dasharray="4 4" opacity=".55"/>
+  <text x="298" y="${sy(T)-3}" fill="#ffd166" font-size="9" text-anchor="end" font-family="Orbitron" opacity=".7">${T}</text>
+  <polyline fill="none" stroke="#00d2ff" stroke-width="2" points="${line}" style="filter:drop-shadow(0 0 4px #00d2ff)"/>
+  ${pts.map(p=>`<circle cx="${sx(p.t)}" cy="${sy(p.v)}" r="2.6" fill="#00d2ff"/>`).join('')}`;
+}
+
+/* ---------- Glossario (i) ---------- */
+function info(key){const g=GLOSS[key];if(!g)return;
+ overlay(`<div class="alert gl"><div class="h" style="color:var(--neon);text-align:center">◆ ARCHIVIO DEL SISTEMA ◆</div>
+  ${g.k?`<div style="text-align:center;font-size:38px;color:#fff;text-shadow:0 0 14px var(--neon)">${g.k}</div>`:''}
+  <div class="big" style="font-size:19px;text-align:center;color:var(--neon);text-shadow:0 0 10px var(--neon)">${g.t}</div>
+  <div class="mean">${g.m}</div><div class="desc">${g.d}</div>${g.tip?`<div class="tip">◆ ${g.tip}</div>`:''}
+  <button class="btn" style="margin-top:14px" onclick="closeOv()">CHIUDI</button></div>`)}
+
+/* ---------- Quest / Dojo ---------- */
+function toggleQuest(id){completeQuest(id)}
+function completeQuest(id,why){
+ if(S.done[id])return;const q=QUESTS.find(x=>x.id===id);S.done[id]=true;S.prog[id]=tgt(q);
+ if(RUN&&RUN.id===id)RUN=null;
+ if(why)log(why);
+ toast(`Quest completata · <b class="pts">+${q.xp} XP</b>`);
+ train(q.st);log(`Addestramento ${q.st} ${S.tr[q.st]}/5`);
+ if(QUESTS.every(x=>S.done[x.id])){
+  S.pts++;log('Daily Quest completa! <em>+1 Punto Statistica</em>');
+  const y=ymd(addD(new Date(),-1));S.streak=S.lastFull===y?S.streak+1:1;S.lastFull=today();
+  if(S.streak%7===0){S.st.DIS++;log(`Streak di ${S.streak} giorni! <em>DIS +1</em>`);toast(`Streak ${S.streak} giorni · <b class="pts">DIS +1</b>`)}
+ }
+ addXP(q.xp,`Daily Quest "${q.n}" completata`);
+}
+/* ---------- Date ---------- */
+function ymd(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function addD(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
+const pd=s=>{const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c)};
+const today=()=>ymd(new Date());
+const WD=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'],MESI=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+const nice=s=>{const d=pd(s);return`${WD[d.getDay()].toLowerCase()} ${d.getDate()}/${d.getMonth()+1}`};
+const daysAgo=s=>Math.round((pd(today())-pd(s))/864e5);
+const agoTxt=s=>{const n=daysAgo(s);return n===0?'oggi':n===1?'ieri':`${n} gg fa`};
+const hasLesson=d=>S.lessons.some(l=>l.d===d);
+const isSched=d=>S.days.includes(pd(d).getDay());
+
+/* ---------- Modalità recupero: obiettivi ridotti se hai segnalato fastidio o dolore ---------- */
+const recovering=()=>S.recov&&today()<=S.recov;
+const tgt=q=>recovering()&&q.rt?q.rt:q.target;
+
+/* ---------- Lezione mancante: chiede conferma per l'ultima lezione in programma non registrata ---------- */
+function pendingMissed(){
+ for(let i=1;i<=10;i++){const d=ymd(addD(new Date(),-i));if(d<S.created)break;if(isSched(d)&&!hasLesson(d)&&!S.skip.includes(d))return d}
+ return null;
+}
+function markSkipped(d){S.skip.push(d);log(`Lezione di ${nice(d)} segnata come saltata.`);render()}
+
+/* ---------- Diario: form di registrazione lezione ---------- */
+const TAGS=['Suburi','Kihon','Kata','Kumitachi','Ashisabaki','Condizionamento','Sparring'];
+let FORM=null;
+function openLessonForm(date){
+ FORM={d:date||today(),tags:[],kata:[],joint:0};
+ overlay(`<div class="alert form"><div class="h" style="color:var(--neon);text-align:center">◆ DIARIO DI LEZIONE ◆</div>
+  <div class="lbl">Data</div><input type="date" id="lf-date" value="${FORM.d}" max="${today()}">
+  <div class="lbl">Cosa avete fatto</div><div class="chips" id="lf-tags"></div>
+  ${S.kata.length?`<div class="lbl">Kata praticati</div><div class="chips" id="lf-kata"></div>`:''}
+  <div class="lbl">Correzione del Sensei</div><textarea id="lf-fix" placeholder="Es. tieni le spalle basse nel taglio"></textarea>
+  <div class="lbl">Ginocchia e caviglie</div><div class="chips" id="lf-joint"></div>
+  <div class="lbl">Note personali (facoltative)</div><textarea id="lf-note" style="min-height:44px" placeholder="Come ti sei sentito, cosa vuoi ricordare"></textarea>
+  <div class="g2" style="margin-top:14px"><button class="btn sm" onclick="closeOv()">ANNULLA</button><button class="btn sm" onclick="saveLesson()">✓ REGISTRA</button></div></div>`,drawForm);
+}
+function drawForm(){
+ if(!FORM||!$('lf-tags'))return;
+ $('lf-tags').innerHTML=TAGS.map(t=>`<button class="chip ${FORM.tags.includes(t)?'on':''}" onclick="fTog('tags','${t}')">${t}</button>`).join('');
+ if($('lf-kata'))$('lf-kata').innerHTML=S.kata.map(k=>`<button class="chip ${FORM.kata.includes(k.n)?'on':''}" onclick="fTog('kata','${k.n.replace(/'/g,"\\'")}')">${k.n}</button>`).join('');
+ $('lf-joint').innerHTML=['Tutto ok','Fastidio','Dolore'].map((t,i)=>`<button class="chip ${FORM.joint===i?'on':''}" onclick="FORM.joint=${i};drawForm()">${t}</button>`).join('');
+}
+function fTog(k,v){const a=FORM[k],i=a.indexOf(v);i<0?a.push(v):a.splice(i,1);drawForm()}
+function saveLesson(){
+ const d=$('lf-date').value||today();
+ if(d>today()){toast('La data non può essere nel futuro');return}
+ if(hasLesson(d)){toast('C\'è già una lezione registrata in questa data');return}
+ const L={d,tags:[...FORM.tags],kata:[...FORM.kata],fix:$('lf-fix').value.trim(),joint:FORM.joint,note:$('lf-note').value.trim()};
+ S.lessons.push(L);S.lessons.sort((a,b)=>a.d<b.d?-1:1);S.skip=S.skip.filter(x=>x!==d);
+ closeOv();
+ let xp=50;train('DIS');
+ if(L.tags.includes('Sparring')){xp+=30;train('RES')}
+ L.kata.forEach(n=>{const k=S.kata.find(x=>x.n===n);if(k&&(!k.last||k.last<d))k.last=d});
+ if(L.fix){S.fixes.unshift({id:Date.now(),txt:L.fix,d,n:0,lastDone:null,active:true});log(`Nuova Quest Correttiva: "${L.fix}"`)}
+ if(L.joint>0){
+  S.recov=ymd(addD(pd(d),1));
+  log(`Articolazioni: ${L.joint===2?'dolore':'fastidio'}. Modalità Recupero attiva fino a ${nice(S.recov)}.`,'w');
+  overlay(`<div class="alert" style="border-color:#6fd3a0;box-shadow:0 0 26px rgba(111,211,160,.35)"><div class="h" style="color:#6fd3a0">◆ MODALITÀ RECUPERO ◆</div>
+   <p>Il Sistema riduce suburi, cardio e rinforzo fino a ${nice(S.recov)} per proteggere ginocchia e caviglie.${L.joint===2?'<br><br><b style="color:var(--gold)">Se il dolore dura più di qualche giorno o peggiora, fatti vedere da un medico o da un fisioterapista prima di riprendere a pieno.</b>':''}</p>
+   <button class="btn" onclick="closeOv()">HO CAPITO</button></div>`);
+ }
+ if(d===today())QUESTS.filter(q=>q.dojo&&!S.done[q.id]).forEach(q=>completeQuest(q.id,`"${q.n}" coperta dalla lezione.`));
+ toast('Lezione registrata');
+ addXP(xp,`Lezione di ${nice(d)} registrata`);
+}
+
+/* ---------- Quest Correttive (dalle correzioni del Sensei) ---------- */
+function fixApplied(id){
+ const f=S.fixes.find(x=>x.id===id);if(!f||f.lastDone===today())return;
+ f.lastDone=today();f.n++;train('TEC');addXP(10,`Correzione applicata: "${f.txt}"`);toast('Correzione applicata · <b class="pts">+10 XP</b>');
+}
+function fixLearned(id){
+ const f=S.fixes.find(x=>x.id===id);if(!f)return;f.active=false;train('DIS');
+ addXP(30,`Correzione acquisita dopo ${f.n} applicazioni`);toast('Correzione acquisita · <b class="pts">+30 XP</b>');
+}
+
+/* ---------- Kata e padronanza ---------- */
+const KLV=['','Visto','In studio','Consolidato','Padroneggiato'],KXP=[0,0,40,60,100];
+const kataDue=k=>k.last&&daysAgo(k.last)>(k.lvl>=4?30:14);
+function addKata(){
+ const n=$('kin').value.trim();if(!n){toast('Scrivi il nome del kata');return}
+ if(S.kata.some(k=>k.n.toLowerCase()===n.toLowerCase())){toast('Questo kata è già nel registro');return}
+ $('kin').value='';S.kata.push({n,lvl:1,last:today(),notes:''});
+ train('TEC');addXP(60,`Nuovo kata nel registro: ${n}`);toast(`Kata "${n}" aggiunto`);
+}
+function openKata(i){
+ const k=S.kata[i];
+ overlay(`<div class="alert form"><div class="h" style="color:var(--neon);text-align:center">◆ KATA ◆</div>
+  <div class="big" style="font-size:20px;text-align:center;color:var(--ct)">${k.n}</div>
+  <div style="text-align:center;font-size:12.5px;color:var(--muted)">Ultima pratica: ${k.last?agoTxt(k.last):'mai'}</div>
+  <div class="lbl">Livello di padronanza</div>
+  <div class="g4">${[1,2,3,4].map(l=>`<button class="btn sm" style="${l===k.lvl?'background:var(--neon);color:var(--bg);text-shadow:none':''}" onclick="setKataLv(${i},${l})">${KLV[l]}</button>`).join('')}</div>
+  <div class="lbl">Punti chiave e note</div><textarea id="kt-notes" placeholder="Cosa ricordare di questo kata">${k.notes||''}</textarea>
+  <div class="g2" style="margin-top:14px"><button class="btn sm" onclick="kataPractice(${i})">PRATICATO OGGI</button><button class="btn sm" onclick="kataSave(${i})">✓ SALVA</button></div></div>`);
+}
+function setKataLv(i,l){
+ const k=S.kata[i],old=k.lvl;k.notes=$('kt-notes').value;k.lvl=l;
+ if(l>old){let xp=0;for(let j=old+1;j<=l;j++)xp+=KXP[j];train('TEC');addXP(xp,`${k.n}: ${KLV[l]}`);toast(`${k.n} · ${KLV[l]} · <b class="pts">+${xp} XP</b>`)}
+ closeOv();openKata(i);render();
+}
+function kataPractice(i){const k=S.kata[i];k.notes=$('kt-notes').value;k.last=today();toast(`${k.n}: praticato oggi`);closeOv();render()}
+function kataSave(i){S.kata[i].notes=$('kt-notes').value;closeOv();render()}
+
+/* ---------- Calendario ---------- */
+let CALM=0;
+function calMove(n){CALM+=n;render()}
+function lessonStreak(){
+ let n=0;for(let i=0;i<120;i++){const d=ymd(addD(new Date(),-i));if(!isSched(d))continue;
+  if(hasLesson(d))n++;else if(i===0)continue;else break}return n;
+}
+function renderDojo(){
+ const t=today(),base=new Date();base.setDate(1);base.setMonth(base.getMonth()+CALM);
+ const y=base.getFullYear(),m=base.getMonth(),first=(new Date(y,m,1).getDay()+6)%7,nd=new Date(y,m+1,0).getDate();
+ $('calm').textContent=`${MESI[m].toUpperCase()} ${y}`;
+ let h=['L','M','M','G','V','S','D'].map(x=>`<div class="h">${x}</div>`).join('')+'<div></div>'.repeat(first);
+ for(let g=1;g<=nd;g++){const d=ymd(new Date(y,m,g));let c='d';
+  if(hasLesson(d))c+=' att';else if(isSched(d)&&d<t&&d>=S.created)c+=' miss';else if(isSched(d))c+=' sch';
+  if(d===t)c+=' today';h+=`<div class="${c}">${g}</div>`}
+ $('cal').innerHTML=h;
+ /* frequenza: lezioni in programma passate nel mese corrente */
+ const ms=[];for(let g=1;g<=new Date().getDate();g++){const d=ymd(new Date(new Date().getFullYear(),new Date().getMonth(),g));if(isSched(d)&&d>=S.created&&(d<t||hasLesson(d)))ms.push(d)}
+ const att=ms.filter(hasLesson).length;$('dfreq').textContent=ms.length?Math.round(att/ms.length*100)+'%':'-';
+ $('dstreak').textContent=lessonStreak();$('dtot').textContent=S.lessons.length;
+ let nx='';for(let i=0;i<8;i++){const d=ymd(addD(new Date(),i));if(isSched(d)&&!hasLesson(d)){nx=i===0?'Lezione oggi':`Prossima: ${nice(d)}`;break}}$('nextles').textContent=nx;
+ $('wdays').innerHTML=[1,2,3,4,5,6,0].map(w=>`<button class="chip ${S.days.includes(w)?'on':''}" onclick="togDay(${w})">${WD[w]}</button>`).join('');
+ const pm=pendingMissed();
+ $('missed').innerHTML=pm?`<div class="panel missed"><div class="ttl" style="color:var(--red);text-shadow:0 0 8px var(--red)">! LEZIONE NON REGISTRATA</div>
+  <p style="font-size:14px;margin:6px 0 10px">Il Sistema non ha dati per la lezione di <b>${nice(pm)}</b>. Eri presente?</p>
+  <div class="g2"><button class="btn sm" onclick="openLessonForm('${pm}')">ERO PRESENTE</button><button class="btn sm danger" onclick="markSkipped('${pm}')">L'HO SALTATA</button></div></div>`:'';
+ const L=[...S.lessons].reverse().slice(0,4);
+ $('diary').innerHTML=L.map(l=>`<div class="entry"><div class="eh"><b>${nice(l.d).toUpperCase()}</b><span class="jt jt${l.joint}">${['Articolazioni ok','Fastidio','Dolore'][l.joint]}</span></div>
+  ${l.tags.length?`<div class="tags">${l.tags.map(x=>`<span class="tag">${x}</span>`).join('')}${l.kata.map(x=>`<span class="tag">型 ${x}</span>`).join('')}</div>`:''}
+  ${l.fix?`<div class="fixtxt">Sensei: ${l.fix}</div>`:''}${l.note?`<div style="font-size:12.5px;color:var(--muted);margin-top:4px">${l.note}</div>`:''}</div>`).join('')||'<div class="entry" style="color:var(--muted);font-size:13px">Nessuna lezione registrata.</div>';
+ const due=S.kata.filter(kataDue).length;$('katasum').textContent=`${S.kata.length} nel registro${due?` · ${due} da ripassare`:''}`;
+ $('katas').innerHTML=S.kata.map((k,i)=>`<div class="krow" onclick="openKata(${i})"><div class="kn">${k.n}${kataDue(k)?'<span class="due">RIPASSO</span>':''}<small>${k.last?'Praticato '+agoTxt(k.last):'Mai praticato'}${k.notes?' · '+k.notes.slice(0,38)+(k.notes.length>38?'…':''):''}</small></div>
+  <div><div class="pips">${[1,2,3,4].map(l=>`<i class="${l<=k.lvl?'on':''}"></i>`).join('')}</div><div class="klv">${KLV[k.lvl].toUpperCase()}</div></div></div>`).join('')||'<div style="color:var(--muted);font-size:13px">Aggiungi il primo kata.</div>';
+}
+function togDay(w){const i=S.days.indexOf(w);i<0?S.days.push(w):S.days.splice(i,1);render()}
+function renderQuestExtras(){
+ const t=today(),done=hasLesson(t),sched=isSched(t);
+ $('recov').innerHTML=recovering()?`<div class="panel recov"><b>◆ MODALITÀ RECUPERO</b>Hai segnalato fastidio alle articolazioni: suburi, cardio e rinforzo sono ridotti (↓) fino a ${nice(S.recov)}.</div>`:'';
+ $('dojoday').innerHTML=done
+  ?`<div class="ic">⛩</div><div class="tx"><b>LEZIONE DI OGGI REGISTRATA</b>Suburi e Ashisabaki contano come fatti al dōjō.</div>`
+  :sched?`<div class="ic">⛩</div><div class="tx"><b>OGGI È GIORNO DI LEZIONE</b>Dopo la lezione registrala: completa anche Suburi e Ashisabaki.</div><button class="btn" onclick="openLessonForm()">REGISTRA</button>`
+  :`<div class="ic" style="opacity:.6">⛩</div><div class="tx"><b>NIENTE LEZIONE OGGI</b>${$('nextles').textContent||''}</div><button class="btn" onclick="openLessonForm()">EXTRA</button>`;
+ const F=S.fixes.filter(f=>f.active);
+ $('fixes').style.display=F.length?'block':'none';
+ $('fixes').innerHTML=`<div class="ttl c"><b>QUEST CORRETTIVE</b></div><p style="text-align:center;font-size:12.5px;color:var(--muted);margin:-4px 0 6px">Dalle correzioni del Sensei · applicale durante l'allenamento</p>`+
+  F.map(f=>`<div class="fix"><p>${f.txt}</p><small>dal ${nice(f.d)} · applicata ${f.n} ${f.n===1?'volta':'volte'}</small>
+   <div class="ga"><button class="btn ${f.lastDone===t?'done':''}" onclick="fixApplied(${f.id})">${f.lastDone===t?'✓ APPLICATA OGGI':'APPLICATA OGGI · +10 XP'}</button><button class="btn" style="flex:0 0 auto" onclick="fixLearned(${f.id})">ACQUISITA</button></div></div>`).join('');
+}
+
+
+/* ---------- Cronometri delle quest ----------
+   Basati sull'orario (Date.now): continuano a contare anche se blocchi l'iPhone o cambi app.
+   Un solo cronometro attivo alla volta; in pausa il tempo fatto resta salvato. */
+let RUN=null,PLANK=null;
+const fmt=s=>{s=Math.max(0,Math.floor(s));return`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`};
+const prog=q=>RUN&&RUN.id===q.id?RUN.base+(Date.now()-RUN.start)/1000:(S.prog[q.id]||0);
+function startRun(id){
+ if(RUN&&RUN.id===id){S.prog[id]=prog(QUESTS.find(q=>q.id===id));RUN=null;render();return}  /* pausa */
+ if(RUN)S.prog[RUN.id]=prog(QUESTS.find(q=>q.id===RUN.id));
+ RUN={id,start:Date.now(),base:S.prog[id]||0};render();
+}
+function addProg(id,n){
+ const q=QUESTS.find(x=>x.id===id);if(S.done[id])return;
+ S.prog[id]=Math.min(tgt(q),prog(q)+n);if(RUN&&RUN.id===id)RUN={id,start:Date.now(),base:S.prog[id]};
+ if(S.prog[id]>=tgt(q))completeQuest(id);else render();
+}
+function startPlank(){PLANK={end:Date.now()+30000};render()}
+function beep(msg){toast(msg);if(navigator.vibrate)navigator.vibrate([200,100,200])}
+function tick(){
+ if(S&&rollDay()){render();return}
+ if(RUN){const q=QUESTS.find(x=>x.id===RUN.id),v=prog(q);
+  if(v>=q.target){beep(`⏱ ${q.n}: tempo completato`);completeQuest(q.id)}
+  else{const e=$('gc-'+q.id),b=$('gb-'+q.id);if(e)e.textContent=`[${fmt(v)} / ${fmt(q.target)}]`;if(b)b.style.width=v/q.target*100+'%'}}
+ if(PLANK){const l=(PLANK.end-Date.now())/1000,e=$('plank');
+  if(l<=0){PLANK=null;beep('Plank completato');render()}else if(e)e.textContent=`PLANK ${Math.ceil(l)}s`}
+ const n=new Date(),m=new Date(n);m.setHours(24,0,0,0);const r=(m-n)/1000;
+ if($('qleft'))$('qleft').textContent=`${String(Math.floor(r/3600)).padStart(2,'0')}:${fmt(r%3600)}`;
+}
+setInterval(tick,250);
+document.addEventListener('visibilitychange',tick);
+
+function goalHTML(q){
+ const v=prog(q),done=S.done[q.id],T=tgt(q),pct=Math.min(100,v/T*100);
+ const cnt=q.type==='time'?`[${fmt(v)} / ${fmt(q.target)}]`:`[${Math.floor(v)}/${T}${q.unit}]${T<q.target?' ↓':''}`;
+ let act='';
+ if(done)act=`<div class="gdone">✓ COMPLETATO · +${q.xp} XP · ${q.st} ▲</div>`;
+ else if(q.type==='count')act=`<div class="ga">${q.steps.map(n=>`<button class="btn" onclick="addProg('${q.id}',${n})">${q.stepLabel||'+'+n+q.unit}</button>`).join('')}
+   <button class="btn ok" onclick="completeQuest('${q.id}')" aria-label="Segna come fatto">✓</button></div>`;
+ else{const running=RUN&&RUN.id===q.id;
+  act=`<div class="ga"><button class="btn ${running?'run':''}" onclick="startRun('${q.id}')">${running?'❚❚ PAUSA':(v>0?'▶ RIPRENDI':'▶ AVVIA')}</button>
+   ${q.manual?`<button class="btn" onclick="addProg('${q.id}',${q.manual})">+${q.manual/60} MIN</button>`:''}
+   <button class="btn ok" onclick="completeQuest('${q.id}')" aria-label="Segna come fatto">✓</button></div>`}
+ return`<div class="goal ${done?'done':''}"><div class="gh"><span class="gn">${q.n}<button class="info" onclick="info('${q.g}')" aria-label="Cos'è">i</button></span>
+  <span class="gc" id="gc-${q.id}">${cnt}</span></div><div class="gs">${q.s} · ${q.st} ▲</div>
+  <div class="bar"><i id="gb-${q.id}" style="width:${pct}%"></i></div>${act}</div>`;
+}
+
+/* =====================================================================
+   EFFETTI DI CLASSE (canvas)
+   - Ambiente: effetto leggero e continuo dietro ai pannelli
+   - Burst: ~4 s di effetti intensi sopra la notifica di Cambio Classe
+   Si mette in pausa quando l'app non è visibile; rispetta "Riduci movimento".
+   ===================================================================== */
+const FX={c:null,x:null,w:0,h:0,p:[],bolts:[],rings:[],slashes:[],flash:0,flashCol:'255,30,60',stage:0,burstEnd:0,next:0,level:'alti'};
+const REDUCE=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const rnd=(a,b)=>a+Math.random()*(b-a);
+function fxInit(){FX.c=$('fx');FX.x=FX.c.getContext('2d');fxSize();addEventListener('resize',fxSize);requestAnimationFrame(fxLoop)}
+function fxSize(){const r=FX.c.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);FX.c.width=r.width*d;FX.c.height=r.height*d;FX.x.setTransform(d,0,0,d,0,0);FX.w=r.width;FX.h=r.height}
+function fxSet(i){if(FX.stage!==i){FX.stage=i;FX.p=[];FX.bolts=[];FX.slashes=[]}}
+function fxBurst(i){
+ fxSet(i);FX.burstEnd=performance.now()+4200;FX.c.classList.add('burst');
+ if(i>=5){const ph=$('phone');ph.classList.remove('shake');void ph.offsetWidth;ph.classList.add('shake')}
+ if(navigator.vibrate)navigator.vibrate(i===LAST?[60,40,60,40,160]:[100,60,100]);
+}
+function intensity(now){
+ if(now<FX.burstEnd)return 1;
+ if(FX.c.classList.contains('burst')){FX.c.classList.remove('burst');if(S){applyTheme(S.cls);fxSet(S.cls)}}
+ return FX.level==='off'||REDUCE?0:FX.level==='bassi'?.18:.38;
+}
+
+/* ---- generatori ---- */
+function boltPath(x1,y1,x2,y2){let P=[[x1,y1],[x2,y2]];
+ for(let i=0;i<6;i++){const N=[];for(let j=0;j<P.length-1;j++){const a=P[j],b=P[j+1],l=Math.hypot(b[0]-a[0],b[1]-a[1]);
+  N.push(a,[(a[0]+b[0])/2+rnd(-.5,.5)*l*.45,(a[1]+b[1])/2+rnd(-.5,.5)*l*.12])}N.push(P[P.length-1]);P=N}return P}
+function addBolt(I){
+ const x=rnd(.1,.9)*FX.w,main=boltPath(x,-10,x+rnd(-90,90),rnd(.45,1)*FX.h);
+ const br=main[Math.floor(rnd(.25,.6)*main.length)],branch=boltPath(br[0],br[1],br[0]+rnd(-120,120),br[1]+rnd(60,180));
+ const st=PATH[FX.stage];
+ FX.bolts.push({paths:[main,branch],life:1,dark:Math.random()<st.dark,col:st.col,w:(.45+FX.stage*.07)*(I>.5?1:.75)});
+ FX.flash=Math.max(FX.flash,(.12+FX.stage*.025)*I);FX.flashCol=st.col;
+}
+function flame(col,dark){const hi=performance.now()<FX.burstEnd;return{x:rnd(0,FX.w),y:FX.h+20,vx:rnd(-.4,.4),vy:hi?rnd(-5.5,-2.5):rnd(-2.6,-1.1),r:hi?rnd(20,46):rnd(14,34),life:1,dec:hi?rnd(.005,.011):rnd(.008,.016),col,dark}}
+function mote(col,fall){return{x:rnd(0,FX.w),y:fall?-10:FX.h+10,vx:rnd(-.3,.3)+(fall?.35:0),vy:fall?rnd(.4,1.1):rnd(-.9,-.3),r:rnd(1,2.6),life:1,dec:rnd(.003,.007),col,dot:1}}
+function ember(){return{x:rnd(0,FX.w),y:FX.h+5,vx:rnd(-.8,.8),vy:rnd(-5,-2.4),r:rnd(1.2,3),life:1,dec:rnd(.01,.02),col:Math.random()<.6?'255,90,31':'255,200,80',dot:1,flick:1}}
+function streak(){const y=rnd(0,FX.h);return{x:-80,y,y0:y,vx:rnd(7,13),ph:rnd(0,6),amp:rnd(8,30),len:rnd(60,160),life:1,dec:.006,col:Math.random()<.7?'43,255,198':'232,255,248',wind:1}}
+
+/* ---- spawn per classe (I = intensità 0..1) ---- */
+const SPAWN={
+ /* i = stadio 0..9, I = intensità 0..1. Più alto lo stadio, più fulmini, più grandi, più scuri. */
+ fulmine(I,now){
+  const i=FX.stage,st=PATH[i];
+  if(Math.random()<I*(.35+i*.06))FX.p.push(mote(Math.random()<st.dark?'30,0,0':st.col));
+  if(i===1&&Math.random()<I*1.2)FX.p.push({...ember(),col:Math.random()<.6?'255,209,102':'255,255,255'});
+  if(i>=2&&now>FX.next){
+   addBolt(I);
+   FX.next=now+(I>.5?rnd(700,1100)/(1+i*.35):rnd(9000,14000)/(1+i*.25));
+  }
+  if(i>=LAST-1&&I>.5&&Math.random()<.02)FX.slashes.push({a:rnd(-.7,-.3),life:1,col:st.col});
+ }
+};
+
+/* ---- disegno ---- */
+function drawBolt(b){const x=FX.x;
+ b.paths.forEach((P,i)=>{x.beginPath();P.forEach((p,j)=>j?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));
+  const a=b.life*(i?.6:1);
+  x.shadowBlur=24;x.shadowColor=`rgba(${b.col},${a})`;
+  x.strokeStyle=`rgba(${b.col},${a*.8})`;x.lineWidth=(i?3:7)*b.w;x.stroke();
+  x.shadowBlur=0;x.strokeStyle=b.dark?`rgba(0,0,0,${a})`:`rgba(255,255,255,${a})`;x.lineWidth=(i?1.2:2.6)*b.w;x.stroke()});
+}
+function fxLoop(now){
+ requestAnimationFrame(fxLoop);
+ if(document.hidden||!FX.x)return;
+ const I=intensity(now),x=FX.x;
+ x.globalCompositeOperation='source-over';x.clearRect(0,0,FX.w,FX.h);
+ if(I===0&&!FX.p.length&&!FX.bolts.length)return;
+ if(I>0)SPAWN.fulmine(I,now);
+ if(FX.p.length>420)FX.p.splice(0,FX.p.length-420);
+ /* vignetta scura per Enma e Raijin durante il burst */
+ if(I>.5&&FX.stage>=7){const g=x.createRadialGradient(FX.w/2,FX.h/2,FX.h*.2,FX.w/2,FX.h/2,FX.h*.75);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.6)');x.fillStyle=g;x.fillRect(0,0,FX.w,FX.h)}
+ /* luna di Tsukuyomi */
+ if(FX.mode==='tsukuyomi'){const a=I>.5?.9:I*1.2;x.save();x.globalAlpha=a;x.shadowBlur=40;x.shadowColor='#c8d0ff';x.fillStyle='#e8ecff';x.beginPath();x.arc(FX.w*.78,FX.h*.13,34,0,7);x.fill();x.shadowBlur=0;x.globalCompositeOperation='destination-out';x.beginPath();x.arc(FX.w*.78+14,FX.h*.13-8,30,0,7);x.fill();x.restore()}
+ /* particelle */
+ for(const p of FX.p){
+  p.x+=p.vx;p.y+=p.vy;p.life-=p.dec;
+  if(p.wind){p.x+=0;const yy=p.y0+Math.sin(p.x/60+p.ph)*p.amp;x.globalCompositeOperation='lighter';x.strokeStyle=`rgba(${p.col},${p.life*.8})`;x.lineWidth=2.2;x.beginPath();x.moveTo(p.x-p.len,p.y0+Math.sin((p.x-p.len)/60+p.ph)*p.amp);x.quadraticCurveTo(p.x-p.len/2,yy+p.amp*.3,p.x,yy);x.stroke();continue}
+  if(p.dot){const f=p.flick?rnd(.5,1):1;x.globalCompositeOperation='lighter';x.fillStyle=`rgba(${p.col},${p.life*.25*f})`;x.beginPath();x.arc(p.x,p.y,p.r*3,0,7);x.fill();x.fillStyle=`rgba(${p.col},${p.life*.9*f})`;x.beginPath();x.arc(p.x,p.y,p.r,0,7);x.fill();continue}
+  /* fiamma: il raggio si riduce salendo */
+  const r=p.r*p.life;if(r<1)continue;p.x+=Math.sin(p.y/30)*.4;
+  if(p.dark){x.globalCompositeOperation='source-over';const g=x.createRadialGradient(p.x,p.y,0,p.x,p.y,r);g.addColorStop(0,`rgba(0,0,0,${p.life*.75})`);g.addColorStop(.7,`rgba(${p.col==='0,0,0'?'40,0,60':p.col},${p.life*.35})`);g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g}
+  else{x.globalCompositeOperation='lighter';const g=x.createRadialGradient(p.x,p.y,0,p.x,p.y,r);g.addColorStop(0,`rgba(255,255,255,${p.life*.35})`);g.addColorStop(.35,`rgba(${p.col},${p.life*.45})`);g.addColorStop(1,`rgba(${p.col},0)`);x.fillStyle=g}
+  x.beginPath();x.arc(p.x,p.y,r,0,7);x.fill();
+ }
+ FX.p=FX.p.filter(p=>p.life>0&&p.x<FX.w+200&&p.y>-60&&p.y<FX.h+60);
+ /* fulmini */
+ x.globalCompositeOperation='source-over';
+ FX.bolts.forEach(b=>{drawBolt(b);b.life-=.06});FX.bolts=FX.bolts.filter(b=>b.life>0);
+ /* onde d'urto di Fudō */
+ FX.rings.forEach(g=>{g.r+=4;g.life-=.012;x.globalCompositeOperation='lighter';x.strokeStyle=`rgba(255,182,39,${g.life*.7})`;x.lineWidth=3*g.life+1;x.beginPath();x.ellipse(FX.w/2,FX.h*.92,g.r,g.r*.28,0,0,7);x.stroke()});
+ FX.rings=FX.rings.filter(g=>g.life>0);
+ /* fendenti di Ashura / lama lunare di Tsukuyomi */
+ FX.slashes.forEach(s=>{s.life-=.035;const a=Math.max(0,s.life);x.globalCompositeOperation='lighter';x.save();x.translate(FX.w/2,FX.h/2);x.rotate(s.a);
+  if(s.moon){x.strokeStyle=`rgba(223,230,255,${a})`;x.shadowBlur=20;x.shadowColor='#aab4ff';x.lineWidth=4*a+1;x.beginPath();x.arc(0,40,FX.w*.6,Math.PI*1.15,Math.PI*1.85);x.stroke()}
+  else{x.strokeStyle=`rgba(255,255,255,${a})`;x.shadowBlur=22;x.shadowColor=`rgb(${s.col})`;x.lineWidth=4*a+.5;x.beginPath();x.moveTo(-FX.w*.7,0);x.lineTo(FX.w*.7,-14);x.stroke()}
+  x.restore()});
+ FX.slashes=FX.slashes.filter(s=>s.life>0);
+ /* lampo */
+ if(FX.flash>0){x.globalCompositeOperation='source-over';x.fillStyle=`rgba(${FX.flashCol},${FX.flash})`;x.fillRect(0,0,FX.w,FX.h);FX.flash*=.82;if(FX.flash<.01)FX.flash=0}
+}
+function setFx(l){FX.level=l;S.fx=l;save();renderFxUi();toast(`Effetti: ${l}`)}
+function renderFxUi(){
+ $('fxopt').innerHTML=['alti','bassi','off'].map(l=>`<button class="chip ${FX.level===l?'on':''}" onclick="setFx('${l}')">${l.toUpperCase()}</button>`).join('');
+ $('fxdemo').innerHTML=PATH.slice(0,S.cls+1).map((c,i)=>`<button class="chip" onclick="previewClass(${i})">${i+1}. ${c.k} ${c.n}</button>`).join('');
+}
+
+/* ---------- Render ---------- */
+function render(){
+ const need=xpFor(S.lvl),P=S.profile;
+ $('pname').textContent=(P.name||'Giocatore').toUpperCase();$('pgrade').textContent='Spadaccino'+(P.grade?' · '+P.grade:'');
+ $('lvl').textContent=S.lvl;$('rank').textContent=rankOf(S.lvl);
+ $('xptxt').textContent=`${S.xp} / ${need}`;$('xpbar').style.width=Math.min(100,S.xp/need*100)+'%';
+ if(performance.now()>FX.burstEnd){applyTheme(S.cls);fxSet(S.cls)}
+ const C=PATH[S.cls];$('badge').textContent=`${C.k} ${C.jp}`;$('badge').className='badge'+(S.cls===0?' base':'');
+ $('stage').textContent=`STADIO ${S.cls+1}/10`;$('track').innerHTML=trackHTML();
+ $('clsname').textContent=`${C.k} ${C.n} · ${C.t}`;$('clsdesc').textContent=C.d;$('next').innerHTML=nextHint();
+ $('pts').textContent=S.pts;
+ const A=advise();$('advice').innerHTML='◆ CONSIGLIO DEL SISTEMA<br>'+A.txt;
+ $('stats').innerHTML=STATS.map(([k,nm,d])=>`<div class="stat ${A.rec.includes(k)?'rec':''}"><span class="k">${k}</span><span class="d"><b style="color:var(--txt);font-weight:600">${nm}</b><br>${d}</span>
+  <span class="n" id="n-${k}">${eff(k)}${S.pend[k]?`<span class="pend">+${S.pend[k]}</span>`:''}<small>allen. ${S.tr[k]}/5</small></span>
+  <button class="plus minus" ${S.pend[k]?'':'disabled'} onclick="unspend('${k}')" aria-label="Togli punto da ${k}">−</button>
+  <button class="plus ${A.rec.includes(k)?'rec':''}" ${S.pts?'':'disabled'} onclick="spend('${k}')" aria-label="Aumenta ${k}">+</button></div>`).join('');
+ $('confirm').classList.toggle('on',pendTot()>0);
+ const cur=S.w[S.w.length-1].v;$('wnow').textContent=cur.toFixed(1)+' kg';
+ $('wstart').textContent=P.start;$('wtarget').textContent=P.target;
+ $('wbar').style.width=Math.max(0,Math.min(100,(P.start-cur)/(P.start-P.target)*100))+'%';
+ const lost=P.start-cur;$('lost').textContent=`${Math.abs(lost)<.05?'':lost>0?'-':'+'}${Math.abs(lost).toFixed(1)} kg · record ${S.rec.toFixed(1)}`;
+ drawChart();
+ $('quests').innerHTML=QUESTS.map(goalHTML).join('');
+ renderDojo();renderQuestExtras();renderFxUi();renderSys();
+ $('streak').textContent=S.streak;
+ tick();
+ save();
+
+}
+
+/* ---------- Navigazione ---------- */
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('on',x===b));
+ document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.id==='t-'+b.dataset.t));
+ $('scr').scrollTop=0;
+});
+/* ---------- Sistema: profilo, export, import, reset ---------- */
+function renderSys(){
+ const P=S.profile;
+ $('profbox').innerHTML=`${P.name||'-'}${P.age?` · ${P.age} anni`:''}${P.height?` · ${P.height} cm`:''}<br>Peso iniziale ${P.start} kg · Obiettivo ${P.target} kg<br>Grado: ${P.grade||'-'}<br><span style="color:var(--muted);font-size:12.5px">Giocatore dal ${nice(S.created)}</span>`;
+ $('lastexp').textContent=S.lastExport?`Ultimo export: ${agoTxt(S.lastExport)}`:'Non hai ancora esportato un salvataggio.';
+}
+function editProfile(){
+ const P=S.profile;
+ overlay(`<div class="alert form"><div class="h" style="color:var(--neon);text-align:center">◆ PROFILO ◆</div>
+  <div class="lbl">Nome</div><input id="e-name" value="${(P.name||'').replace(/"/g,'&quot;')}">
+  <div class="g2"><div><div class="lbl">Età</div><input id="e-age" type="number" inputmode="numeric" value="${P.age||''}"></div><div><div class="lbl">Altezza (cm)</div><input id="e-h" type="number" inputmode="numeric" value="${P.height||''}"></div></div>
+  <div class="g2"><div><div class="lbl">Peso iniziale</div><input id="e-w" type="number" step="0.1" inputmode="decimal" value="${P.start}"></div><div><div class="lbl">Obiettivo</div><input id="e-t" type="number" step="0.1" inputmode="decimal" value="${P.target}"></div></div>
+  <div class="lbl">Grado nel dojo</div><input id="e-g" value="${(P.grade||'').replace(/"/g,'&quot;')}">
+  <div class="g2" style="margin-top:14px"><button class="btn sm" onclick="closeOv()">ANNULLA</button><button class="btn sm" onclick="saveProfile()">✓ SALVA</button></div></div>`);
+}
+function saveProfile(){
+ const w=parseFloat($('e-w').value),t=parseFloat($('e-t').value);
+ if(!(w>30&&w<300&&t>30&&t<w)){toast('Controlla i pesi: l\'obiettivo deve essere minore del peso iniziale');return}
+ Object.assign(S.profile,{name:$('e-name').value.trim()||'Giocatore',age:$('e-age').value,height:$('e-h').value,start:w,target:t,grade:$('e-g').value.trim()});
+ log('Profilo aggiornato.');closeOv();render();
+}
+async function exportSave(){
+ S.lastExport=today();save();
+ const name=`sistema-kenjutsu-${today()}.json`,data=JSON.stringify(S);
+ const file=new File([data],name,{type:'application/json'});
+ /* Su iPhone apre il foglio di condivisione: scegli "Salva su File" (iCloud Drive) */
+ if(navigator.canShare&&navigator.canShare({files:[file]})){
+  try{await navigator.share({files:[file],title:'Salvataggio Il Sistema'});toast('Salvataggio esportato');log('Salvataggio esportato.');render();return}
+  catch(e){if(e.name==='AbortError'){S.lastExport=null;save();return}}
+ }
+ const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();
+ setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);toast('Salvataggio esportato');log('Salvataggio esportato.');render();
+}
+let IMPORTED=null;
+function importSave(inp){
+ const f=inp.files&&inp.files[0];inp.value='';if(!f)return;
+ const r=new FileReader();
+ r.onload=()=>{
+  try{const o=JSON.parse(r.result);if(!o||!o.profile||!o.st||typeof o.lvl!=='number')throw 0;IMPORTED=normalize(o)}
+  catch(e){toast('File non valido: non è un salvataggio del Sistema');return}
+  if(!S){applyImport();return}
+  overlay(`<div class="alert"><div class="h" style="color:var(--gold)">◆ IMPORTA SALVATAGGIO ◆</div>
+   <p>${IMPORTED.profile.name} · Livello ${IMPORTED.lvl} · Stadio ${IMPORTED.cls+1}/10<br><br>I dati attuali su questo dispositivo verranno sostituiti.</p>
+   <div class="g2"><button class="btn sm" onclick="closeOv()">ANNULLA</button><button class="btn sm" onclick="applyImport()">SOSTITUISCI</button></div></div>`);
+ };
+ r.readAsText(f);
+}
+function applyImport(){S=IMPORTED;IMPORTED=null;save();$('onb').classList.remove('on');closeOv();rollDay();FX.level=S.fx||'alti';log('Salvataggio importato.');render();toast('Salvataggio importato')}
+function askDailyReset(){
+ overlay(`<div class="alert"><div class="h" style="color:var(--neon)">◆ AZZERA LE QUEST DI OGGI ◆</div>
+  <p>Gli obiettivi di oggi tornano a zero. Gli XP e le statistiche già ottenuti restano.</p>
+  <div class="g2"><button class="btn sm" onclick="closeOv()">ANNULLA</button><button class="btn sm" onclick="S.done={};S.prog={};log('Daily Quest di oggi azzerate.');closeOv();render()">AZZERA</button></div></div>`);
+}
+function askReset(){
+ overlay(`<div class="alert" style="border-color:var(--red);box-shadow:0 0 26px rgba(255,77,109,.35)"><div class="h" style="color:var(--red)">◆ RESET TOTALE ◆</div>
+  <p>Cancella tutti i progressi su questo dispositivo: livelli, statistiche, peso, diario e kata. Non si può annullare.<br><br>Scrivi <b>RESET</b> per confermare.</p>
+  <input id="rs-in" autocomplete="off" autocapitalize="characters" placeholder="RESET">
+  <div class="g2" style="margin-top:12px"><button class="btn sm" onclick="closeOv()">ANNULLA</button><button class="btn sm danger" onclick="doReset()">CANCELLA TUTTO</button></div></div>`);
+}
+function doReset(){
+ if($('rs-in').value.trim().toUpperCase()!=='RESET'){toast('Scrivi RESET per confermare');return}
+ S=null;try{localStorage.removeItem(KEY)}catch(e){}location.reload();
+}
+
+/* ---------- Primo avvio ---------- */
+function initPlayer(){
+ const name=$('o-name').value.trim(),w=parseFloat($('o-w').value.replace(',','.')),t=parseFloat($('o-t').value.replace(',','.'));
+ if(!name){$('o-err').textContent='Inserisci il tuo nome';return}
+ if(!(w>30&&w<300)){$('o-err').textContent='Inserisci un peso attuale valido';return}
+ if(!(t>30&&t<w)){$('o-err').textContent='L\'obiettivo deve essere minore del peso attuale';return}
+ S=freshState({name,age:$('o-age').value,height:$('o-h').value,start:w,target:t,grade:$('o-g').value.trim()});
+ log('Sistema inizializzato. Benvenuto, Giocatore.');
+ $('onb').classList.remove('on');render();
+ overlay(`<div class="alert"><div class="h" style="color:var(--neon)">◆ BENVENUTO, ${name.toUpperCase()} ◆</div>
+  <div class="kanji" style="--c1:#00d2ff;--c2:#fff">剣士</div><div class="big" style="font-size:20px;color:var(--neon)">KENSHI</div>
+  <p>Livello 1 · Rango E · Stadio 1/10 della Via del Fulmine.<br><br>Completa le Daily Quest, registra le lezioni del mercoledì e del venerdì e il tuo peso. Ogni giorno diventerai più forte.</p>
+  <button class="btn" onclick="closeOv()">INIZIA</button></div>`);
+}
+
+/* ---------- Avvio ---------- */
+fxInit();
+S=load();
+if(S){FX.level=S.fx||'alti';rollDay();render()}
+else $('onb').classList.add('on');
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&S)save()});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>

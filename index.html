@@ -363,6 +363,7 @@ input:focus{outline:none;border-color:var(--neon);box-shadow:0 0 8px var(--soft)
  </div>
 </div>
 
+<script src="lib/pixi.min.js"></script>
 <script>
 /* ---------- Dati statici ---------- */
 const STATS=[['FOR','Forza','Potenza del taglio'],['VEL','Velocità','Ashisabaki, rapidità'],['RES','Resistenza','Fiato, tenuta'],['TEC','Tecnica','Suburi, postura, kata'],['DIS','Disciplina','Costanza, meditazione']];
@@ -813,11 +814,21 @@ function goalHTML(q){
 const FX={c:null,x:null,w:0,h:0,p:[],bolts:[],rings:[],slashes:[],flash:0,flashCol:'255,30,60',stage:0,burstEnd:0,next:0,level:'alti'};
 const REDUCE=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const rnd=(a,b)=>a+Math.random()*(b-a);
-function fxInit(){FX.c=$('fx');FX.x=FX.c.getContext('2d');fxSize();addEventListener('resize',fxSize);requestAnimationFrame(fxLoop)}
+/* Avvio effetti: motore WebGL (PixiJS) se il dispositivo lo supporta, altrimenti Canvas 2D */
+function fxInit(){
+ FX.c=$('fx');
+ let gl=false;try{const t=document.createElement('canvas');gl=!!(window.PIXI&&(t.getContext('webgl2')||t.getContext('webgl')))}catch(e){}
+ if(gl)glInit().catch(fx2D);else fx2D();
+}
+function fx2D(){
+ /* un canvas su cui si è tentato WebGL non può più dare un contesto 2D: lo sostituisco */
+ const old=$('fx'),c=document.createElement('canvas');c.id='fx';c.className=old.className;old.replaceWith(c);
+ FX.c=c;FX.gl=false;FX.x=c.getContext('2d');fxSize();addEventListener('resize',fxSize);requestAnimationFrame(fxLoop);
+}
 function fxSize(){const r=FX.c.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);FX.c.width=r.width*d;FX.c.height=r.height*d;FX.x.setTransform(d,0,0,d,0,0);FX.w=r.width;FX.h=r.height}
-function fxSet(i){if(FX.stage!==i){FX.stage=i;FX.p=[];FX.bolts=[];FX.slashes=[]}}
+function fxSet(i){if(FX.stage!==i){FX.stage=i;FX.p=[];FX.bolts=[];FX.slashes=[];if(FX.gl&&GL.reset)GL.reset()}}
 function fxBurst(i){
- fxSet(i);FX.burstEnd=performance.now()+4200;FX.c.classList.add('burst');
+ fxSet(i);FX.burstEnd=performance.now()+4200;FX.c.classList.add('burst');if(FX.gl)GL.onBurst();
  if(i>=5){const ph=$('phone');ph.classList.remove('shake');void ph.offsetWidth;ph.classList.add('shake')}
  if(navigator.vibrate)navigator.vibrate(i===LAST?[60,40,60,40,160]:[100,60,100]);
 }
@@ -825,6 +836,132 @@ function intensity(now){
  if(now<FX.burstEnd)return 1;
  if(FX.c.classList.contains('burst')){FX.c.classList.remove('burst');if(S){applyTheme(S.cls);fxSet(S.cls)}}
  return FX.level==='off'||REDUCE?0:FX.level==='bassi'?.18:.38;
+}
+
+
+/* =====================================================================
+   MOTORE WEBGL (PixiJS) — effetti calcolati dalla GPU
+   - Bloom: ogni fulmine è disegnato 3 volte (alone largo sfocato, alone
+     stretto, nucleo bianco o nero) e sommato in modalità additiva.
+   - Il fulmine cresce dall'alto in ~90 ms, sfarfalla e si spegne;
+     all'impatto esplode in scintille con un alone sul terreno.
+   - Durante il Risveglio: archi elettrici sui bordi della finestra,
+     lampo, vignetta scura (stadi alti) e fendente (Raikiri, Raijin).
+   - Il motore si ferma quando gli effetti sono spenti e non c'è nulla
+     da disegnare, o quando l'app non è visibile (risparmio batteria).
+   ===================================================================== */
+const GL={};
+async function glInit(){
+ const app=new PIXI.Application();
+ await app.init({canvas:FX.c,resizeTo:$('phone'),backgroundAlpha:0,antialias:true,
+  resolution:Math.min(2,devicePixelRatio||1),autoDensity:true,powerPreference:'high-performance'});
+ FX.gl=true;GL.app=app;
+ const W=()=>app.screen.width,H=()=>app.screen.height;
+ const hexOf=c=>{const[r,g,b]=c.split(',').map(Number);return(r<<16)|(g<<8)|b};
+
+ /* texture morbida per particelle e aloni, generata una sola volta */
+ const tc=document.createElement('canvas');tc.width=tc.height=64;const tx=tc.getContext('2d');
+ const g0=tx.createRadialGradient(32,32,0,32,32,32);g0.addColorStop(0,'rgba(255,255,255,1)');g0.addColorStop(.25,'rgba(255,255,255,.6)');g0.addColorStop(1,'rgba(255,255,255,0)');
+ tx.fillStyle=g0;tx.fillRect(0,0,64,64);const DOT=PIXI.Texture.from(tc);
+ const vc=document.createElement('canvas');vc.width=vc.height=256;const vx=vc.getContext('2d');
+ const gv=vx.createRadialGradient(128,128,40,128,128,180);gv.addColorStop(0,'rgba(0,0,0,0)');gv.addColorStop(1,'rgba(0,0,0,.85)');vx.fillStyle=gv;vx.fillRect(0,0,256,256);
+ const vign=new PIXI.Sprite(PIXI.Texture.from(vc));vign.alpha=0;
+
+ const world=new PIXI.Container();app.stage.addChild(world);
+ const ground=new PIXI.Container();ground.blendMode='add';
+ const motes=new PIXI.Container();motes.blendMode='add';
+ const glowFar=new PIXI.Graphics();glowFar.blendMode='add';glowFar.filters=[new PIXI.BlurFilter({strength:26,quality:3})];
+ const glowNear=new PIXI.Graphics();glowNear.blendMode='add';glowNear.filters=[new PIXI.BlurFilter({strength:8,quality:3})];
+ const core=new PIXI.Graphics();
+ const sparks=new PIXI.Container();sparks.blendMode='add';
+ const arcsGlow=new PIXI.Graphics();arcsGlow.blendMode='add';arcsGlow.filters=[new PIXI.BlurFilter({strength:6,quality:2})];
+ const arcs=new PIXI.Graphics();arcs.blendMode='add';
+ const slash=new PIXI.Graphics();slash.blendMode='add';slash.filters=[new PIXI.BlurFilter({strength:4,quality:2})];
+ const flash=new PIXI.Graphics();
+ world.addChild(vign,ground,motes,glowFar,glowNear,core,sparks,arcsGlow,arcs,slash,flash);
+
+ let bolts=[],arcList=[],slashes=[],next=0,flashA=0;
+ const pool=[],P=[];
+ const getDot=parent=>{const s=pool.pop()||new PIXI.Sprite(DOT);s.anchor.set(.5);parent.addChild(s);return s};
+ const free=s=>{s.parent&&s.parent.removeChild(s);pool.push(s)};
+ function particle(parent,x,y,vx,vy,size,tint,dec,grav=0,ring=0){
+  if(P.length>1400)return;const s=getDot(parent);s.x=x;s.y=y;s.tint=tint;s.alpha=1;s.scale.set(size/32);
+  P.push({s,vx,vy,life:ring?.9:1,dec,grav,ring});
+ }
+ function strike(I){
+  const i=FX.stage,st=PATH[i],w=W(),h=H(),hi=I>.5;
+  const sx=rnd(.12,.88)*w,ex=sx+rnd(-80,80),ey=rnd(.55,.98)*h,main=boltPath(sx,-20,ex,ey);
+  const branches=[];for(let b=0;b<(hi?3:1);b++){const p=main[Math.floor(rnd(.2,.7)*main.length)];branches.push(boltPath(p[0],p[1],p[0]+rnd(-140,140),p[1]+rnd(60,200)))}
+  bolts.push({main,branches,t0:performance.now(),dark:Math.random()<st.dark,w:(.45+i*.07)*(hi?1.15:.8),hex:hexOf(st.col),hit:false,ex,ey,hi});
+ }
+ function impact(b){
+  const n=b.hi?60:14;
+  for(let k=0;k<n;k++){const a=rnd(Math.PI*1.05,Math.PI*1.95),v=rnd(2,9);
+   particle(sparks,b.ex,b.ey,Math.cos(a)*v,Math.sin(a)*v,rnd(3,9),Math.random()<.5?0xffffff:b.hex,rnd(.015,.035),.22)}
+  particle(ground,b.ex,b.ey,0,0,0,b.hex,.025,0,1);
+  flashA=Math.max(flashA,(.04+FX.stage*.016)*(b.hi?1:.5));
+ }
+ function drawPath(g,pts,upto,width,color,alpha){
+  const n=Math.max(2,Math.floor(pts.length*upto));g.moveTo(pts[0][0],pts[0][1]);
+  for(let j=1;j<n;j++)g.lineTo(pts[j][0],pts[j][1]);g.stroke({width,color,alpha,cap:'round',join:'round'});
+ }
+ /* archi elettrici sul bordo della finestra di Risveglio aperta */
+ function edgeArc(){
+  const el=document.querySelector('#ov.on .alert');if(!el)return null;
+  const r=el.getBoundingClientRect(),o=$('phone').getBoundingClientRect(),x0=r.left-o.left,y0=r.top-o.top,cw=r.width,ch=r.height;
+  const side=Math.floor(rnd(0,4));let a,b;
+  if(side<2){const x=rnd(x0,x0+cw-60),y=side?y0+ch:y0;a=[x,y];b=[x+rnd(30,70),y]}
+  else{const y=rnd(y0,y0+ch-50),x=side===2?x0:x0+cw;a=[x,y];b=[x,y+rnd(25,55)]}
+  return{pts:boltPath(a[0],a[1],b[0],b[1],4),life:1};
+ }
+ GL.reset=()=>{bolts=[];arcList=[];slashes=[];P.splice(0).forEach(p=>free(p.s))};
+ GL.onBurst=()=>{next=0;flashA=.2;if(!app.ticker.started)app.ticker.start()};
+ GL.wake=()=>{if(!app.ticker.started)app.ticker.start()};
+
+ app.ticker.add(()=>{
+  const t=performance.now(),I=intensity(t),i=FX.stage,st=PATH[i],hex=hexOf(st.col),w=W(),h=H(),hi=I>.5;
+  /* nulla da mostrare: fermo il motore finché non serve */
+  if(I===0&&!P.length&&!bolts.length&&!arcList.length&&flashA<.005){
+   glowFar.clear();glowNear.clear();core.clear();arcs.clear();arcsGlow.clear();slash.clear();flash.clear();app.render();app.ticker.stop();return}
+  vign.width=w;vign.height=h;vign.alpha+=((hi&&i>=7?1:0)-vign.alpha)*.08;
+  if(I>0){
+   /* stadio 1 (Hibana): scintille dorate; gli altri: braci del colore dello stadio */
+   if(i===1&&Math.random()<I*1.3)particle(motes,rnd(0,w),h+5,rnd(-.8,.8),rnd(-5,-2.4),rnd(2,4),Math.random()<.6?hex:0xffffff,rnd(.01,.02));
+   if(Math.random()<I*(.6+i*.12))particle(motes,rnd(0,w),h+10,rnd(-.3,.3),rnd(-1.4,-.4),rnd(2,5),Math.random()<st.dark*.5?0x330008:hex,rnd(.003,.008));
+   if(i>=2&&t>next){strike(I);next=t+(hi?rnd(420,750)/(1+i*.3):rnd(9000,14000)/(1+i*.25))}
+   if(hi&&i>=2&&Math.random()<.22){const a=edgeArc();if(a)arcList.push(a)}
+   if(hi&&i>=LAST-1&&Math.random()<.02)slashes.push({a:rnd(-.7,-.3),life:1});
+  }
+  glowFar.clear();glowNear.clear();core.clear();
+  bolts=bolts.filter(b=>{
+   const age=t-b.t0,grow=Math.min(1,age/90),fade=age<90?1:Math.max(0,1-(age-90)/420);
+   if(fade<=0)return false;
+   const a=fade*(age>90&&Math.random()<.25?.35:1);
+   if(grow>=1&&!b.hit){b.hit=true;impact(b)}
+   for(const[pts,k]of[[b.main,1],...b.branches.map(p=>[p,.55])]){
+    drawPath(glowFar,pts,grow,18*b.w*k,b.hex,.55*a);
+    drawPath(glowNear,pts,grow,7*b.w*k,b.hex,.9*a);
+    drawPath(core,pts,grow,(b.dark?3.4:2.2)*b.w*k,b.dark?0x000000:0xffffff,a);
+   }
+   return true;
+  });
+  arcs.clear();arcsGlow.clear();
+  arcList=arcList.filter(r=>{r.life-=.12;if(r.life<=0)return false;
+   if(Math.random()<.5)r.pts=boltPath(r.pts[0][0],r.pts[0][1],r.pts[r.pts.length-1][0],r.pts[r.pts.length-1][1],4);
+   drawPath(arcsGlow,r.pts,1,6,hex,r.life);drawPath(arcs,r.pts,1,1.4,0xffffff,r.life);return true});
+  slash.clear();
+  slashes=slashes.filter(z=>{z.life-=.035;if(z.life<=0)return false;
+   const c=Math.cos(z.a),s2=Math.sin(z.a),L=w*.7,cx=w/2,cy=h/2;
+   slash.moveTo(cx-c*L,cy-s2*L).lineTo(cx+c*L,cy+s2*L-14).stroke({width:6*z.life+1,color:hex,alpha:z.life});
+   slash.moveTo(cx-c*L,cy-s2*L).lineTo(cx+c*L,cy+s2*L-14).stroke({width:2*z.life+.5,color:0xffffff,alpha:z.life});return true});
+  for(let k=P.length-1;k>=0;k--){const p=P[k];p.life-=p.dec;
+   if(p.life<=0){free(p.s);P.splice(k,1);continue}
+   p.vy+=p.grav;p.s.x+=p.vx;p.s.y+=p.vy;
+   if(p.ring){p.s.alpha=p.life*.8;p.s.scale.set(5+(1-p.life)*6,1.6+(1-p.life)*1.2)}else p.s.alpha=Math.min(1,p.life*1.4);
+   if(p.s.y<-20)p.life=0}
+  flash.clear();if(flashA>.005){flash.rect(0,0,w,h).fill({color:hex,alpha:flashA});flashA*=.84}
+ });
+ document.addEventListener('visibilitychange',()=>{document.hidden?app.ticker.stop():app.ticker.start()});
 }
 
 /* ---- generatori ---- */
@@ -905,7 +1042,7 @@ function fxLoop(now){
  /* lampo */
  if(FX.flash>0){x.globalCompositeOperation='source-over';x.fillStyle=`rgba(${FX.flashCol},${FX.flash})`;x.fillRect(0,0,FX.w,FX.h);FX.flash*=.82;if(FX.flash<.01)FX.flash=0}
 }
-function setFx(l){FX.level=l;S.fx=l;save();renderFxUi();toast(`Effetti: ${l}`)}
+function setFx(l){FX.level=l;S.fx=l;save();if(FX.gl)GL.wake();renderFxUi();toast(`Effetti: ${l}`)}
 function renderFxUi(){
  $('fxopt').innerHTML=['alti','bassi','off'].map(l=>`<button class="chip ${FX.level===l?'on':''}" onclick="setFx('${l}')">${l.toUpperCase()}</button>`).join('');
  $('fxdemo').innerHTML=PATH.slice(0,S.cls+1).map((c,i)=>`<button class="chip" onclick="previewClass(${i})">${i+1}. ${c.k} ${c.n}</button>`).join('');
